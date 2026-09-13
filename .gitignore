@@ -1,0 +1,39 @@
+# ===== Python =====
+__pycache__/
+*.pyc
+venv/
+.pytest_cache/
+
+# ===== 密钥与本地配置（含 API Key，严禁入库） =====
+.env
+
+# ===== 运行时产物（日志/输出自动生成，不入库；README 说明文件除外） =====
+logs/*
+!logs/README.md
+output/*
+!output/README.md
+archives/*
+!archives/README.md
+
+# ===== 本地资料库（个人知识资产；README 说明除外，如需全库纳入版本控制删行即可） =====
+LocalDataBase/*
+!LocalDataBase/README.md
+
+# ===== 主题域（domains/<域>/ 隔离单元：域内资料/输出/档案均为个人知识资产，不入库；
+#           _模板域 是资产模板，保留入库） =====
+domains/*
+!domains/README.md
+!domains/_模板域/
+
+# ===== 历史遗留/临时备份 =====
+main.py.正确能跑通的_备份
+*.bak
+_run_*.log
+_commit_msg.txt
+
+# ===== 项目外工具与个人文档（发布时从版本库移出，仅留本地） =====
+settings.json
+project_export.txt
+工程进度20260909.docx
+项目说明和设计文档.docx
+.coverage

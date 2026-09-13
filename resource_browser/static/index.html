@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ResearchBase 资源浏览器</title>
+<link rel="stylesheet" href="/static/resource_browser/style.css">
+</head>
+<body>
+<header>
+  <h1>📂 ResearchBase 资源浏览器</h1>
+  <div class="tabs" id="tabs"></div>
+</header>
+
+<div class="layout">
+  <aside class="tree-panel">
+    <div id="treeBox"><div class="placeholder">加载目录树…</div></div>
+  </aside>
+
+  <main class="content-panel">
+    <div id="contentBox">
+      <div class="placeholder">从左侧选择文件查看内容<br>🔒 只读分区仅可查看 ｜ ✏️ 档案分区可编辑</div>
+    </div>
+  </main>
+</div>
+
+<script src="/static/resource_browser/app.js"></script>
+</body>
+</html>
