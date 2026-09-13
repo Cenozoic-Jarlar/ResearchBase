@@ -78,7 +78,7 @@ ResearchBase 是一个个人知识整理与主题研究助手框架：**双调�
 ### 2. 安装
 
 ```bash
-git clone <你的仓库地址>
+git clone https://github.com/Cenozoic-Jarlar/ResearchBase.git
 cd ResearchBase
 
 # 创建虚拟环境

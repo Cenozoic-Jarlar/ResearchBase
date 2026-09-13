@@ -78,7 +78,7 @@ Key design decisions:
 ### 2. Install
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/Cenozoic-Jarlar/ResearchBase.git
 cd ResearchBase
 
 # create virtual environment
