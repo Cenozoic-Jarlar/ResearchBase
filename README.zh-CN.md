@@ -7,6 +7,8 @@
 
 ResearchBase 是一个个人知识整理与主题研究助手框架：**双调度引擎**（LLM 动态规划 + 固定 LangGraph 工作流）、**Agent / Skill / 流程全部目录自动注册**、**价值观框架与长期记忆体系**、**主题域隔离**的本地知识库，以及**零依赖 Web GUI**。代码设计为**AI 可维护**（六段式 AI 可读注释、`AGENTS.md` 作为单一事实来源），同时保持人工可读。
 
+![ResearchBase Web GUI](docs/screenshot-gui.png)
+
 ---
 
 ## 功能特性

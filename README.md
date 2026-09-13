@@ -7,6 +7,8 @@
 
 ResearchBase is a personal knowledge & research assistant framework. It combines **two scheduling engines** (LLM-driven dynamic planning + fixed LangGraph workflows), **auto-registered pluggable agents/skills/flows**, a **value-system & long-term memory** layer, **topic-domain isolation** for your local knowledge base, and a **zero-dependency Web GUI** — all designed to be **maintained by AI** (AI-friendly comments, `AGENTS.md` as single source of truth) while staying human-readable.
 
+![ResearchBase Web GUI](docs/screenshot-gui.png)
+
 ---
 
 ## Features
