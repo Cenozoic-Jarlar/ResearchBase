@@ -54,7 +54,7 @@ def resolve_key(env_var_name: str) -> str:
 MODELS = {
     # ── 档位1 router：硅基流动（便宜快，路由判断/简单问答）──
     "router": {
-        "model": "deepseek-ai/DeepSeek-V4-Flash",
+        "model": "Qwen/Qwen3.5-9B",
         "base_url": os.getenv("LLM_BASE_URL", "https://api.siliconflow.cn/v1"),
         "api_key": resolve_key("LLM_API_KEY"),  # ★ key 在 .env：LLM_API_KEY=sk-...
         "role": "路由判断/简单问答，便宜快",
@@ -64,7 +64,7 @@ MODELS = {
     },
     # ── 档位2 standard：硅基流动（日常调研/写作/审阅主体）──
     "standard": {
-        "model": "deepseek-ai/DeepSeek-V4-Pro",
+        "model": "deepseek-ai/DeepSeek-V4-Flash",
         "base_url": os.getenv("LLM_BASE_URL", "https://api.siliconflow.cn/v1"),
         "api_key": resolve_key("LLM_API_KEY"),  # ★ key 在 .env：LLM_API_KEY=sk-...
         "role": "日常调研/写作/审阅主模型",
@@ -75,7 +75,7 @@ MODELS = {
     # ── 档位3 reasoning：DeepSeek 官方（复杂推理，仅人工指定）──
     #    真实 key 放 .env：LLM_REASONING_API_KEY=sk-xxx（platform.deepseek.com 申请）
     "reasoning": {
-        "model": "deepseek-reasoner",
+        "model": "deepseek-v4-pro",
         "base_url": os.getenv("LLM_REASONING_BASE_URL", "https://api.deepseek.com/v1"),
         "api_key": resolve_key("LLM_REASONING_API_KEY"),  # ★ key 在 .env：LLM_REASONING_API_KEY=sk-...
         "role": "复杂推理/深度分析（人工指定）",

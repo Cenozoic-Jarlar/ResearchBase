@@ -63,6 +63,12 @@
       <label data-i18n="research.timeout">LLM 超时（秒，留空=用 .env 默认 90）</label>
       <input id="llmTimeout" type="number" min="10" max="600" placeholder="90" />
 
+      <label class="checkbox-label">
+        <input type="checkbox" id="autoArchive">
+        <span data-i18n="research.autoArchive">📥 跑完自动归档要点到资料库</span>
+      </label>
+      <div class="hint" data-i18n="research.autoArchiveHint">勾上后跑完会额外调一次 LLM 提炼要点摘要写入资料库（全文不入库）；不勾=只输出文章不入库</div>
+
       <div class="actions">
         <button id="btnStart" class="primary" data-i18n="research.start">▶ 开始任务</button>
         <button id="btnCancel" disabled data-i18n="research.cancel">⏹ 取消</button>

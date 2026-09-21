@@ -64,7 +64,7 @@ def graph_from_langgraph(graph) -> dict:
 class Task:
     def __init__(self, task_id: str, topic: str, mode: str, flow_name: str = "", profiles: list = None,
                  domain: str = None, timeout: float = None, model_tier: str = None, items: list = None,
-                 raw_topic: str = "", write_mode: str = "auto"):
+                 raw_topic: str = "", write_mode: str = "auto", auto_archive: bool = False):
         self.id = task_id
         self.topic = topic            # 展示名（任务卡片/日志用）
         self.raw_topic = raw_topic    # import 模式：用户原始主题输入（空=collector 自动提炼），与展示名分离
@@ -76,6 +76,7 @@ class Task:
         self.timeout = timeout    # LLM 超时（秒，None=用 .env 默认）；任务启动时 apply_llm_config
         self.model_tier = model_tier  # 模型档位（router/standard/reasoning；None=按难度自动映射）
         self.items = items or []  # import 模式：来源列表 [{type,name,content}]
+        self.auto_archive = auto_archive  # 研究任务跑完是否自动归档要点到资料库（调 archivist，多一次 LLM 调用）
         self.status = "created"   # created/planning/waiting_feedback/executing/waiting_input/done/failed/cancelled
         self.events = []
         self.graph = {"nodes": [], "edges": []}
@@ -125,9 +126,9 @@ class TaskManager:
 
     def create(self, topic: str, mode: str, flow_name: str = "", profiles: list = None,
                domain: str = None, timeout: float = None, model_tier: str = None, items: list = None,
-               raw_topic: str = "", write_mode: str = "auto") -> Task:
+               raw_topic: str = "", write_mode: str = "auto", auto_archive: bool = False) -> Task:
         task = Task(uuid.uuid4().hex[:8], topic, mode, flow_name, profiles, domain, timeout, model_tier, items,
-                    raw_topic, write_mode)
+                    raw_topic, write_mode, auto_archive)
         self.tasks[task.id] = task
         return task
 
@@ -370,6 +371,19 @@ class TaskManager:
                 task.add_event("info", "🧠 长期记忆已沉淀一条任务记录")
         except Exception as e:
             task.add_event("info", f"（长期记忆沉淀失败，不影响任务结果：{e}）")
+        # 3.5) 自动归档要点到资料库（用户勾了 auto_archive 才执行；多一次 LLM 调用提炼摘要）
+        if task.auto_archive:
+            try:
+                article = (task.final_state or {}).get("final_article", "")
+                if article:
+                    task.add_event("info", "📥 正在自动归档要点到资料库（调 archivist，多一次 LLM 调用）...")
+                    archivist_run = registry.get_run_func("archivist")
+                    update = archivist_run(task.final_state or {})
+                    task.final_state.update(update)
+                    result = update.get("archive_result", "")
+                    task.add_event("info", f"✅ 归档完成：{result or '要点已写入资料库'}")
+            except Exception as e:
+                task.add_event("info", f"（自动归档失败，不影响任务结果：{e}）")
         # 4) 用量统计（轮次/tokens/费用估算）→ 简单日志 + GUI 事件
         self._log_usage(task)
 
@@ -441,6 +455,20 @@ class TaskManager:
         task.status = "done"
         task.add_event("done", "✅ 任务执行完成")
         self._archive_done(task)
+
+    def archive_task(self, task: Task) -> dict:
+        """手动归档：把已完成任务的 final_article 调 archivist 写入资料库（前端'保存要点到资料库'按钮触发）。
+        返回 {ok, message}；失败抛异常由 API 层捕获。"""
+        if not task.final_state or not task.final_state.get("final_article"):
+            return {"ok": False, "message": "任务没有最终文章，无法归档"}
+        task.add_event("info", "📥 正在归档要点到资料库（调 archivist）...")
+        archivist_run = registry.get_run_func("archivist")
+        update = archivist_run(task.final_state)
+        task.final_state.update(update)
+        result = update.get("archive_result", "")
+        msg = f"✅ 归档完成：{result or '要点已写入资料库'}"
+        task.add_event("info", msg)
+        return {"ok": True, "message": msg}
 
 
 # 模块级单例

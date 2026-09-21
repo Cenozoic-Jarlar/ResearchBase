@@ -143,6 +143,7 @@ def create_task():
     domain = (data.get("domain") or "").strip().lower() or None  # None=通用层
     model_tier = (data.get("model_tier") or "").strip() or None  # 模型档位（None=按难度自动映射）
     timeout = data.get("timeout")  # LLM 超时秒数（None=用 .env 默认）
+    auto_archive = bool(data.get("auto_archive", False))  # 跑完自动归档要点到资料库
     try:
         timeout = float(timeout) if timeout else None
         if timeout is not None and not (10 <= timeout <= 600):
@@ -164,7 +165,8 @@ def create_task():
         if model_tier not in MODEL_REGISTRY:
             return jsonify({"ok": False, "error": f"未知模型档位：{model_tier}，可选 {sorted(MODEL_REGISTRY)}"}), 400
 
-    task = task_manager.create(topic, mode, flow_name, profiles, domain, timeout, model_tier)
+    task = task_manager.create(topic, mode, flow_name, profiles, domain, timeout, model_tier,
+                               auto_archive=auto_archive)
     task_manager.start(task)
     return jsonify({"ok": True, "task_id": task.id})
 
@@ -204,6 +206,19 @@ def cancel_task(task_id):
         return jsonify({"ok": False, "error": "任务不存在"}), 404
     ok = task_manager.cancel(task_id)
     return jsonify({"ok": ok, "message": "已发送取消请求" if ok else "当前状态不可取消"})
+
+
+@app.route("/api/task/<task_id>/archive", methods=["POST"])
+def archive_task_api(task_id):
+    """手动归档：把已完成任务的 final_article 经 archivist 写入资料库（多一次 LLM 调用）"""
+    task = task_manager.get(task_id)
+    if not task:
+        return jsonify({"ok": False, "error": "任务不存在"}), 404
+    try:
+        result = task_manager.archive_task(task)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"ok": False, "error": f"归档失败：{e}"}), 500
 
 
 def create_app() -> Flask:

@@ -99,7 +99,9 @@ function renderBadges() {
 
 function fillFlowSelect() {
   const sel = $("flowSelect");
-  sel.innerHTML = info.flows.map(f => `<option value="${f.name}">${f.name} — ${f.desc}</option>`).join("");
+  // 研究任务 Tab 只显示研究类流程；material_import（资料入库）不在这里出现（资料入库 Tab 自己处理）
+  const researchFlows = (info.flows || []).filter(f => f.name !== "material_import");
+  sel.innerHTML = researchFlows.map(f => `<option value="${f.name}">${f.name} — ${f.desc}</option>`).join("");
 }
 
 function fillProfileSelect() {
@@ -356,6 +358,7 @@ async function startTask() {
       domain: selectedDomain(),
       model_tier: $("modelTierSelect").value || null,  // 模型档位（留空=按难度自动映射）
       timeout: $("llmTimeout").value ? Number($("llmTimeout").value) : null,
+      auto_archive: $("autoArchive").checked,  // 跑完自动归档要点到资料库
     }),
   });
   const data = await res.json();
@@ -366,6 +369,22 @@ async function startTask() {
 async function cancelTask() {
   if (!currentTaskId) return;
   await fetch(`/api/task/${currentTaskId}/cancel`, { method: "POST" });
+}
+
+async function archiveArticle(taskId, btn) {
+  btn.disabled = true;
+  btn.textContent = "📥 归档中（多一次 LLM 调用）...";
+  try {
+    const res = await fetch(`/api/task/${taskId}/archive`, { method: "POST" });
+    const data = await res.json();
+    $("archiveMsg").textContent = data.ok ? (" ✅ " + data.message) : (" ❌ " + (data.error || "失败"));
+    if (data.ok) btn.textContent = "✅ 已归档";
+    else btn.textContent = "📥 保存要点到资料库";
+  } catch (e) {
+    $("archiveMsg").textContent = " ❌ 请求失败：" + e;
+    btn.textContent = "📥 保存要点到资料库";
+    btn.disabled = false;
+  }
 }
 
 $("btnStart").addEventListener("click", startTask);
@@ -689,7 +708,11 @@ function renderResult(task) {
   } else if (task.status === "done" && task.final_state && task.final_state.final_article) {
     $("result").style.display = "block";
     $("resultBody").textContent = task.final_state.final_article;
-    $("resultMeta").textContent = `主题：${task.topic}｜模式：${task.mode}｜完成：${task.created_at}`;
+    $("resultMeta").innerHTML = `主题：${escapeHtml(task.topic)}｜模式：${escapeHtml(task.mode)}｜完成：${escapeHtml(task.created_at)}
+      <button id="btnArchiveNow" class="primary" style="margin-top:8px">📥 保存要点到资料库</button>
+      <span id="archiveMsg" class="hint"></span>`;
+    const btn = $("btnArchiveNow");
+    if (btn) btn.addEventListener("click", () => archiveArticle(task.id, btn));
   } else if (task.status === "failed") {
     $("result").style.display = "block";
     $("resultBody").textContent = `任务失败：${task.error || "未知错误"}`;

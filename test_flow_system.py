@@ -25,7 +25,7 @@ def test_flow_registry_load():
     names = [f["name"] for f in flows]
     print(f"✅ 注册流程: {names}")
     expected = {"article_generation", "quick_article", "critical_article",
-                "comprehensive_research", "knowledge_archiving"}
+                "comprehensive_research", "fact_check_article", "material_import"}
     missing = expected - set(names)
     assert not missing, f"缺少流程: {missing}"
     assert len(flows) >= len(expected), "流程数量不足"
