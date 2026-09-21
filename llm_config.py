@@ -245,6 +245,64 @@ def _extract_usage(resp) -> dict:
     return {}
 
 
+def _classify_llm_error(exc: Exception, label: str) -> str:
+    """把 LLM 调用异常翻译成用户能看懂的人话。
+
+    设计原则：
+    - 不依赖 openai SDK 的具体类名（版本会变），靠异常链上的类型名/消息特征分类
+    - 保留原始异常摘要在末尾，方便排障
+    - 所有提示都带档位名，方便用户定位是哪个模型配错了
+    """
+    # 遍历异常链（__cause__ / __context__），把所有类型名+消息拼一起做关键词匹配
+    chain_parts = []
+    seen = set()
+    cur = exc
+    while cur is not None and id(cur) not in seen:
+        seen.add(id(cur))
+        chain_parts.append(f"{type(cur).__name__}: {cur}")
+        cur = getattr(cur, "__cause__", None) or getattr(cur, "__context__", None)
+    chain_text = " || ".join(chain_parts)
+    low = chain_text.lower()
+
+    def hit(*keys):
+        return any(k in chain_text or k.lower() in low for k in keys)
+
+    # 1) 无法连接（代理/网络/DNS）
+    if hit("APIConnectionError", "ConnectError", "ConnectionError", "NewConnectionError",
+           "NameResolutionError", "getaddrinfo failed", "Failed to establish",
+           "Connection refused", "ConnectionResetError", "Connection reset", "无法连接"):
+        return (f"无法连接到 LLM 服务（档位={label}）。"
+                f"请检查：① 是否需要代理/VPN ② .env 里 LLM_BASE_URL 是否正确 ③ 网络是否稳定。"
+                f"\n原始错误：{str(exc)[:200]}")
+    # 2) 超时
+    if hit("APITimeoutError", "TimeoutError", "ReadTimeout", "Timeout"):
+        return (f"LLM 调用超时（档位={label}）。"
+                f"可在 GUI 任务表单调大「LLM超时(秒)」，或在 manual_settings.py 调大 LLM_TIMEOUT。"
+                f"\n原始错误：{str(exc)[:200]}")
+    # 3) 认证失败（401/403）
+    if hit("AuthenticationError", "PermissionDeniedError", "Invalid API Key",
+           "Incorrect API key", "invalid_api_key", "Unauthorized", "403"):
+        return (f"LLM 认证失败（档位={label}）：API key 无效、过期或无权限。"
+                f"请检查 .env 中对应 api_key 是否正确（注意多余空格/换行）。"
+                f"\n原始错误：{str(exc)[:200]}")
+    # 4) 模型不存在 / 不支持
+    if hit("ModelNotFound", "model_not_found", "does not exist", "model `", "404"):
+        return (f"模型不存在或该提供商不支持（档位={label}）。"
+                f"请核对 manual_settings.py 里该档的 model 名与 base_url 是否匹配同一提供商。"
+                f"\n原始错误：{str(exc)[:200]}")
+    # 5) 余额/额度不足
+    if hit("InsufficientQuota", "insufficient_quota", "insufficient quota", "quota_exceeded",
+           "Insufficient balance", "余额不足", "Payment Required", "402"):
+        return (f"账户余额/额度不足（档位={label}）。请充值或更换模型提供商。"
+                f"\n原始错误：{str(exc)[:200]}")
+    # 6) 速率限制
+    if hit("RateLimit", "rate_limit", "rate limit", "Too Many Requests", "429"):
+        return (f"触发速率限制（档位={label}）。请稍后重试，或降低并发/减少调用频率。"
+                f"\n原始错误：{str(exc)[:200]}")
+    # 其他：保留原始信息，标注未分类
+    return f"LLM 调用失败（档位={label}），未识别错误类型。原始错误：{str(exc)[:300]}"
+
+
 class LoggingLLM:
     """ChatOpenAI 包装器：调用时记录交互输入输出 + 累计任务级用量统计（按模型分桶）"""
 
@@ -260,8 +318,9 @@ class LoggingLLM:
         try:
             resp = self._llm.invoke(prompt, **kwargs)
         except Exception as e:
-            detail_logger.error(f"[LLM交互][{self._label}] 调用异常: {e}")
-            raise
+            friendly = _classify_llm_error(e, self._label)
+            detail_logger.error(f"[LLM交互][{self._label}] 调用异常: {friendly}")
+            raise RuntimeError(friendly) from e
         content = getattr(resp, "content", str(resp))
         detail_logger.info(f"[LLM交互][{self._label}] >>输出<< {content}")
         # 任务级用量统计：轮次=每次调用；tokens 从响应真实读取，缺失时仅计轮次
@@ -305,10 +364,31 @@ class LoggingLLM:
 def _build_llm(name: str) -> LoggingLLM:
     """按注册表构造一档 LoggingLLM（超时/重试来自默认值）；model_name=API 模型名（计价分桶键）"""
     cfg = MODEL_REGISTRY[name]
+    api_key = (cfg.get("api_key") or "").strip()
+    base_url = (cfg.get("base_url") or "").strip()
+    # 防御：api_key 必须是 ASCII（Bearer token 走 HTTP header）。
+    # 若还是 manual_settings 里的中文占位符（如 "sk-请填入..."），httpx 会抛出晦涩的
+    # "'ascii' codec can't encode characters..."，用户完全看不懂。这里提前拦截，给出人话错误。
+    try:
+        api_key.encode("ascii")
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        raise RuntimeError(
+            f"模型档位 [{name}] 的 API key 未配置真实密钥（当前是占位符）。\n"
+            f"请在 .env 中设置 LLM_{name.upper()}_API_KEY=sk-你的真实key；"
+            f"或在 manual_settings.py 的 MODELS['{name}']['api_key'] 改为引用已配置的环境变量。"
+        )
+    # 防御：base_url 同样必须是 ASCII（URL 走网络层）
+    try:
+        base_url.encode("ascii")
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        raise RuntimeError(
+            f"模型档位 [{name}] 的 base_url 含非 ASCII 字符（疑似占位符）。\n"
+            f"请在 .env 中设置 LLM_{name.upper()}_BASE_URL=https://api.你的提供商.com 或全局 LLM_BASE_URL。"
+        )
     return LoggingLLM(
         ChatOpenAI(
             model=cfg["model"],
-            openai_api_key=cfg["api_key"],
+            openai_api_key=api_key,
             openai_api_base=cfg["base_url"],
             temperature=0.3,
             request_timeout=DEFAULT_TIMEOUT,
