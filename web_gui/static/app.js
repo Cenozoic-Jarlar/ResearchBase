@@ -224,6 +224,41 @@ function bindDomainActions() {
   // 记住上次用的域 + 刷新资料入库话题下拉（随域联动）
   const input = $("domainInput");
   if (input) input.addEventListener("change", () => { rememberDomain(); fillTopicSelect(); });
+
+  // ---- combobox：点 ▾ 展开全部域列表（datalist 只做输入联想，不承担"看全部"） ----
+  const ddBtn = $("domainDropdownBtn");
+  const ddBox = $("domainDropdown");
+  function renderDomainDropdown() {
+    if (!ddBox) return;
+    const items = [PUBLIC_KB_LABEL].concat((info.domains || []).filter(Boolean));
+    const cur = input ? input.value : "";
+    ddBox.innerHTML = items.map(name =>
+      `<div class="dd-item${name === cur ? " selected" : ""}" data-val="${escapeHtml(name)}">${escapeHtml(name)}</div>`
+    ).join("");
+    ddBox.querySelectorAll(".dd-item").forEach(el => {
+      el.addEventListener("mousedown", (e) => {
+        e.preventDefault();  // 防止 input 失焦
+        if (input) input.value = el.dataset.val;
+        hideDropdown();
+        rememberDomain();
+        fillTopicSelect();
+      });
+    });
+  }
+  function showDropdown() { renderDomainDropdown(); ddBox.style.display = "block"; }
+  function hideDropdown() { if (ddBox) ddBox.style.display = "none"; }
+  if (ddBtn) ddBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (ddBox.style.display === "block") hideDropdown(); else showDropdown();
+  });
+  if (input) {
+    input.addEventListener("focus", hideDropdown);   // 聚焦走 datalist 联想
+    input.addEventListener("input", hideDropdown);
+  }
+  document.addEventListener("click", (e) => {
+    if (ddBox && ddBox.style.display === "block" &&
+        !ddBox.contains(e.target) && e.target !== ddBtn) hideDropdown();
+  });
 }
 
 bindDomainActions();

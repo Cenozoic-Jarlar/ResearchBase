@@ -20,7 +20,11 @@
     <div class="panel domain-panel">
       <h3 data-i18n="domain.title">主题域管理</h3>
       <label data-i18n="domain.hint">写入/研究域（公共知识库 = 跨域共享资料，所有域可读）</label>
-      <input id="domainInput" list="domainList" data-i18n-ph="domain.ph" placeholder="公共知识库（跨域共享）· 可选已有域或输入新域名" />
+      <div class="combobox">
+        <input id="domainInput" list="domainList" data-i18n-ph="domain.ph" placeholder="公共知识库（跨域共享）· 可选已有域或输入新域名" autocomplete="off" />
+        <button id="domainDropdownBtn" type="button" class="combobox-btn" title="展开全部域">▾</button>
+        <div id="domainDropdown" class="combobox-dropdown" style="display:none"></div>
+      </div>
       <datalist id="domainList"></datalist>
       <div class="domain-actions">
         <button id="btnNewDomain" type="button" data-i18n="domain.new">＋ 新建域</button>
