@@ -41,6 +41,7 @@ RESOURCE_SECTIONS = [
             {"label": "命令行入口", "prefix": "main.py", "path": _root("main.py")},
             {"label": "Web 入口", "prefix": "gui_web.py", "path": _root("gui_web.py")},
             {"label": "转换工具", "prefix": "md2docx.py", "path": _root("md2docx.py")},
+            {"label": "📖 项目设计文档", "prefix": "AGENTS.md", "path": _root("AGENTS.md")},
         ],
     },
     {

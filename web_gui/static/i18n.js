@@ -15,6 +15,7 @@ const I18N = {
   zh: {
     "app.title": "🧠 ResearchBase（研库）可视化控制台",
     "app.resourceBrowser": "📂 资源浏览器",
+    "app.help": "📖 帮助",
     "app.langToggle": "🌐 EN",
     "domain.title": "主题域管理",
     "domain.hint": "写入/研究域（公共知识库 = 跨域共享资料，所有域可读）",
@@ -92,6 +93,7 @@ const I18N = {
   en: {
     "app.title": "🧠 ResearchBase Console",
     "app.resourceBrowser": "📂 Resource Browser",
+    "app.help": "📖 Help",
     "app.langToggle": "🌐 中文",
     "domain.title": "Domains",
     "domain.hint": "Target domain (public = shared across all domains, readable by everyone)",
