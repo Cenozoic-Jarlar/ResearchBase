@@ -71,3 +71,39 @@ def get_detail_logger(name: str = "research_system_detail") -> logging.Logger:
     """
     enabled = os.getenv("DETAIL_LOG_ENABLED", str(manual_settings.DETAIL_LOG_ENABLED)).strip().lower() in ("1", "true", "yes", "on")
     return _init_logger(name, "detail_run", persist=enabled)
+
+
+def cleanup_old_logs(retention_days: int = None) -> int:
+    """自动清理 logs/ 下超过 N 天的 run_*.log / detail_run_*.log（启动时调用一次）。
+    retention_days 来自 manual_settings.LOG_RETENTION_DAYS（默认 30）；设 0 或负数=不清理。
+    返回删除的文件数；任何异常静默跳过，不影响启动。
+    """
+    try:
+        if retention_days is None:
+            retention_days = getattr(manual_settings, "LOG_RETENTION_DAYS", 30)
+        if retention_days is None or retention_days <= 0:
+            return 0
+        import time
+        cutoff = time.time() - retention_days * 86400
+        removed = 0
+        for fname in os.listdir(LOG_DIR):
+            if not (fname.startswith("run_") or fname.startswith("detail_run_")):
+                continue
+            if not fname.endswith(".log"):
+                continue
+            fpath = os.path.join(LOG_DIR, fname)
+            try:
+                if os.path.getmtime(fpath) < cutoff:
+                    os.remove(fpath)
+                    removed += 1
+            except OSError:
+                pass
+        if removed:
+            print(f"[logger] 自动清理旧日志：删除 {removed} 个超过 {retention_days} 天的文件")
+        return removed
+    except Exception:
+        return 0
+
+
+# 模块加载时自动清理一次（import 即触发，幂等）
+cleanup_old_logs()

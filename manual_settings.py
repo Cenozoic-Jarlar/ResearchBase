@@ -84,3 +84,4 @@ LLM_MAX_RETRIES = 1           # 调用失败重试次数
 DETAIL_LOG_ENABLED = True     # 详细日志开关（false=完全静默不落盘；简单日志不受影响）
 PRICE_INPUT_PER_M = 2.0       # 全局默认单价（元/百万 tokens）：未在 MODELS 标价的模型兜底用
 PRICE_OUTPUT_PER_M = 8.0
+LOG_RETENTION_DAYS = 30       # 日志自动清理：启动时删除 logs/ 下超过 N 天的 run_*.log / detail_run_*.log；设 0=不清理
