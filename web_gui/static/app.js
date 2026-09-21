@@ -33,6 +33,7 @@ async function loadInfo() {
     restoreLastDomain();
     renderDomainStats();
     fillTopicSelect();
+    applyLang();
     const importSel = $("importTopicSelect");
     if (importSel) importSel.addEventListener("change", syncImportTopicInput);
   } catch (e) {
@@ -46,10 +47,10 @@ function renderBadges() {
   const cats = [
     { key: "agents",   label: "Agent",   section: "assets",   icon: "🤖" },
     { key: "skills",   label: "Skill",   section: "assets",   icon: "🔧" },
-    { key: "flows",    label: "流程",     section: "assets",   icon: "🔄" },
-    { key: "models",   label: "模型",     section: null,       icon: "🧠" },
-    { key: "topics",   label: "主题库",   section: "archives", icon: "🗂" },
-    { key: "profiles", label: "价值观",   section: "assets",   icon: "🧭" },
+    { key: "flows",    label: t("badges.flows"),     section: "assets",   icon: "🔄" },
+    { key: "models",   label: t("badges.models"),     section: null,       icon: "🧠" },
+    { key: "topics",   label: t("badges.topics"),   section: "archives", icon: "🗂" },
+    { key: "profiles", label: t("badges.profiles"),   section: "assets",   icon: "🧭" },
   ];
   const box = $("badges");
   box.innerHTML = cats.map(c => {
@@ -76,8 +77,8 @@ function renderBadges() {
                     <span class="ci-name">${escapeHtml(item.name)}</span>
                     <span class="ci-sub">${escapeHtml(shorten(sub, 24))}${dimTag}${tierTag}</span>
                   </a>`;
-        }).join("") || '<div class="cat-item empty">（空）</div>'}
-        ${c.key === "models" ? `<div class="cat-item manage-models"><button class="badge" onclick="openModelsModal()">⚙️ 管理模型</button></div>` : ""}
+        }).join("") || ('<div class="cat-item empty">' + t("badges.empty") + '</div>')}
+        ${c.key === "models" ? `<div class="cat-item manage-models"><button class="badge" onclick="openModelsModal()">${t("badges.manage")}</button></div>` : ""}
       </div>
     </div>`;
   }).join("");
@@ -117,7 +118,7 @@ function fillModelTierSelect() {
   const sel = $("modelTierSelect");
   sel.title = "档位决策链：任务指定 > Agent 声明档位 > 难度自动映射 > 默认 standard。留空=自动：各 Agent 用自己的声明档位（如路由员=router、撰稿=standard），未声明的按任务难度（简单→router、复杂→standard）";
   const models = info.models || [];
-  const options = ['<option value="">自动（Agent 档位/难度映射）</option>']
+  const options = ['<option value="">' + t("models.autoOption") + '</option>']
     .concat(models.map(m =>
       `<option value="${m.name}">${m.name}｜${escapeHtml(m.model)} — ${escapeHtml(m.role || "")}（¥${m.input_price}/${m.output_price} 每百万）</option>`
     ));
@@ -298,7 +299,7 @@ function showTask(taskId) {
   $("result").style.display = "none";
   $("interact").style.display = "none";
   $("logBox").innerHTML = "";
-  $("graphBox").innerHTML = '<div class="placeholder">正在生成流程...请稍候</div>';
+  $("graphBox").innerHTML = '<div class="placeholder">' + t("graph.generating") + '</div>';
   $("btnStart").disabled = true;
   $("btnCancel").disabled = false;
   $("taskMeta").textContent = `任务ID：${currentTaskId}`;

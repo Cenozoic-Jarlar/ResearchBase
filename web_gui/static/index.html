@@ -8,8 +8,9 @@
 </head>
 <body>
 <header>
-  <h1>🧠 ResearchBase（研库）可视化控制台</h1>
-  <a class="browser-link" href="/resource-browser" target="_blank" title="打开资源浏览器（资产/档案/日志）">📂 资源浏览器</a>
+  <h1 data-i18n="app.title">🧠 ResearchBase（研库）可视化控制台</h1>
+  <button id="langToggle" type="button" onclick="toggleLang()" title="Switch language">🌐 EN</button>
+  <a class="browser-link" href="/resource-browser" target="_blank" data-i18n="app.resourceBrowser" title="打开资源浏览器（资产/档案/日志）">📂 资源浏览器</a>
   <div class="badges" id="badges"></div>
 </header>
 
@@ -17,87 +18,87 @@
   <!-- 左侧边栏：主题域管理（公共，两 Tab 共用） + Tab 任务表单 -->
   <aside class="side">
     <div class="panel domain-panel">
-      <h3>主题域管理</h3>
-      <label>写入/研究域（公共知识库 = 跨域共享资料，所有域可读）</label>
-      <input id="domainInput" list="domainList" placeholder="公共知识库（跨域共享）· 可选已有域或输入新域名" />
+      <h3 data-i18n="domain.title">主题域管理</h3>
+      <label data-i18n="domain.hint">写入/研究域（公共知识库 = 跨域共享资料，所有域可读）</label>
+      <input id="domainInput" list="domainList" data-i18n-ph="domain.ph" placeholder="公共知识库（跨域共享）· 可选已有域或输入新域名" />
       <datalist id="domainList"></datalist>
       <div class="domain-actions">
-        <button id="btnNewDomain" type="button">＋ 新建域</button>
-        <button id="btnRenameDomain" type="button">✎ 重命名域</button>
+        <button id="btnNewDomain" type="button" data-i18n="domain.new">＋ 新建域</button>
+        <button id="btnRenameDomain" type="button" data-i18n="domain.rename">✎ 重命名域</button>
       </div>
       <div id="domainStats" class="hint"></div>
     </div>
 
     <!-- Tab 切换：研究任务 / 资料入库（共用上方域选择） -->
     <div class="tab-bar">
-      <button class="tab-btn active" data-tab="research">🔬 研究任务</button>
-      <button class="tab-btn" data-tab="import">📥 资料入库</button>
+      <button class="tab-btn active" data-tab="research" data-i18n="tab.research">🔬 研究任务</button>
+      <button class="tab-btn" data-tab="import" data-i18n="tab.import">📥 资料入库</button>
     </div>
 
     <!-- 研究任务表单 -->
     <div class="panel tab-pane active" id="pane-research">
-      <label>研究主题</label>
-      <textarea id="topic" rows="3" placeholder="输入研究主题，例如：人工智能发展简史 / 宋代文人的审美趣味 / 远程办公对组织架构的影响"></textarea>
+      <label data-i18n="research.topic">研究主题</label>
+      <textarea id="topic" rows="3" data-i18n-ph="research.topicPh" placeholder="输入研究主题，例如：人工智能发展简史 / 宋代文人的审美趣味 / 远程办公对组织架构的影响"></textarea>
 
-      <label>运行模式</label>
+      <label data-i18n="research.mode">运行模式</label>
       <div class="modes">
-        <label><input type="radio" name="mode" value="auto" checked> 动态-全自动</label>
-        <label><input type="radio" name="mode" value="human_review"> 动态-人审计划</label>
-        <label><input type="radio" name="mode" value="static"> 静态工作流</label>
+        <label><input type="radio" name="mode" value="auto" checked> <span data-i18n="research.modeAuto">动态-全自动</span></label>
+        <label><input type="radio" name="mode" value="human_review"> <span data-i18n="research.modeHuman">动态-人审计划</span></label>
+        <label><input type="radio" name="mode" value="static"> <span data-i18n="research.modeStatic">静态工作流</span></label>
       </div>
 
-      <label id="flowLabel" style="display:none">静态流程</label>
+      <label id="flowLabel" style="display:none" data-i18n="research.flow">静态流程</label>
       <select id="flowSelect" style="display:none"></select>
 
-      <label>价值观框架（可多选，留空=自动匹配）</label>
+      <label data-i18n="research.profiles">价值观框架（可多选，留空=自动匹配）</label>
       <select id="profileSelect" multiple size="3"></select>
 
-      <label title="档位决策链：任务指定 > Agent 声明档位 > 难度自动映射 > 默认 standard">模型档位（留空=自动：按 Agent 声明档位，未声明者按难度映射）</label>
+      <label data-i18n="research.tier">模型档位（留空=自动：按 Agent 声明档位，未声明者按难度映射）</label>
       <select id="modelTierSelect"></select>
 
-      <label>LLM 超时（秒，留空=用 .env 默认 90）</label>
+      <label data-i18n="research.timeout">LLM 超时（秒，留空=用 .env 默认 90）</label>
       <input id="llmTimeout" type="number" min="10" max="600" placeholder="90" />
 
       <div class="actions">
-        <button id="btnStart" class="primary">▶ 开始任务</button>
-        <button id="btnCancel" disabled>⏹ 取消</button>
+        <button id="btnStart" class="primary" data-i18n="research.start">▶ 开始任务</button>
+        <button id="btnCancel" disabled data-i18n="research.cancel">⏹ 取消</button>
       </div>
       <div id="taskMeta" class="meta"></div>
     </div>
 
     <!-- 资料入库表单 -->
     <div class="panel tab-pane" id="pane-import">
-      <label>目标话题（入库去向：AI 提炼 / 选现有话题 / 输入新话题）</label>
+      <label data-i18n="import.topic">目标话题（入库去向：AI 提炼 / 选现有话题 / 输入新话题）</label>
       <select id="importTopicSelect">
         <option value="">🤖 AI 自动提炼（默认，自动匹配现有话题防碎片化）</option>
         <option value="__new__">✍️ 手动输入新话题…</option>
       </select>
-      <input id="importTopicNew" placeholder="输入新话题名（如：宋代山水画美学）" style="display:none" />
+      <input id="importTopicNew" data-i18n-ph="import.topicNewPh" placeholder="输入新话题名（如：宋代山水画美学）" style="display:none" />
 
-      <label>写入方式</label>
+      <label data-i18n="import.writeMode">写入方式</label>
       <div class="modes">
-        <label><input type="radio" name="writeMode" value="auto" checked> 🤖 AI 自主决策</label>
-        <label><input type="radio" name="writeMode" value="new"> 📄 新建文件</label>
-        <label><input type="radio" name="writeMode" value="merge"> ➕ 追加到现有文件</label>
+        <label><input type="radio" name="writeMode" value="auto" checked> <span data-i18n="import.writeAuto">🤖 AI 自主决策</span></label>
+        <label><input type="radio" name="writeMode" value="new"> <span data-i18n="import.writeNew">📄 新建文件</span></label>
+        <label><input type="radio" name="writeMode" value="merge"> <span data-i18n="import.writeMerge">➕ 追加到现有文件</span></label>
       </div>
 
-      <label>网络来源（URL，每行一个，可多个）</label>
-      <textarea id="importUrls" rows="2" placeholder="https://...（每行一个 URL，自动抓取正文）"></textarea>
+      <label data-i18n="import.urls">网络来源（URL，每行一个，可多个）</label>
+      <textarea id="importUrls" rows="2" data-i18n-ph="import.urlsPh" placeholder="https://...（每行一个 URL，自动抓取正文）"></textarea>
 
-      <label>本地文件 / 文件夹（支持多选，也可整文件夹）</label>
+      <label data-i18n="import.files">本地文件 / 文件夹（支持多选，也可整文件夹）</label>
       <div class="domain-actions">
-        <button id="btnPickFiles" type="button">📄 选择文件</button>
-        <button id="btnPickFolder" type="button">📁 选择文件夹</button>
+        <button id="btnPickFiles" type="button" data-i18n="import.pickFiles">📄 选择文件</button>
+        <button id="btnPickFolder" type="button" data-i18n="import.pickFolder">📁 选择文件夹</button>
       </div>
       <input type="file" id="importFiles" multiple style="display:none" />
       <input type="file" id="importFolder" webkitdirectory multiple style="display:none" />
       <div id="importFileList" class="hint"></div>
 
-      <label>直接粘贴文本（可选）</label>
-      <textarea id="importText" rows="2" placeholder="或把要整理的文本直接粘贴到这里，随上面来源一并入库"></textarea>
+      <label data-i18n="import.paste">直接粘贴文本（可选）</label>
+      <textarea id="importText" rows="2" data-i18n-ph="import.pastePh" placeholder="或把要整理的文本直接粘贴到这里，随上面来源一并入库"></textarea>
 
       <div class="actions">
-        <button id="btnImport" type="button" class="primary">📥 整理入库</button>
+        <button id="btnImport" type="button" class="primary" data-i18n="import.submit">📥 整理入库</button>
       </div>
       <div id="importResult" class="meta"></div>
     </div>
@@ -106,11 +107,11 @@
   <!-- 中间主区 -->
   <main class="main">
     <div class="card">
-      <h3>流程可视化</h3>
-      <div id="graphBox" class="graph-box"><div class="placeholder">启动任务后显示流程拓扑</div></div>
+      <h3 data-i18n="main.flowTitle">流程可视化</h3>
+      <div id="graphBox" class="graph-box"><div class="placeholder" data-i18n="main.flowPh">启动任务后显示流程拓扑</div></div>
     </div>
     <div class="card">
-      <h3>执行日志</h3>
+      <h3 data-i18n="main.logTitle">执行日志</h3>
       <div id="logBox" class="log-box"></div>
     </div>
   </main>
@@ -123,49 +124,52 @@
 <div id="modelsModal" class="modal-mask" style="display:none">
   <div class="modal-box">
     <div class="modal-head">
-      <h3>⚙️ 模型配置（manual_settings.py 人工/ AI 全局设置）</h3>
+      <h3 data-i18n="modal.title">⚙️ 模型配置（manual_settings.py 人工/ AI 全局设置）</h3>
       <button type="button" class="modal-close" onclick="closeModelsModal()">✕</button>
     </div>
     <div class="modal-body">
-      <p class="hint">保存时自动语法校验 + 备份 .bak；密钥不在界面中，去 <code>.env</code> 修改（如 <code>LLM_REASONING_API_KEY</code>）。改完立即生效，无需重启。</p>
+      <p class="hint" data-i18n="modal.hint">保存时自动语法校验 + 备份 .bak；密钥不在界面中，去 .env 修改。改完立即生效，无需重启。</p>
       <table class="models-table">
         <thead>
           <tr>
-            <th>档位名</th><th>模型名</th><th>Base URL（留空=全局）</th><th>用途</th>
-            <th>能力</th><th>输入价</th><th>输出价</th><th>密钥引用</th><th></th>
+            <th data-i18n="modal.thTier">档位名</th><th data-i18n="modal.thModel">模型名</th>
+            <th data-i18n="modal.thBaseUrl">Base URL（留空=全局）</th><th data-i18n="modal.thRole">用途</th>
+            <th data-i18n="modal.thCaps">能力</th><th data-i18n="modal.thPriceIn">输入价</th>
+            <th data-i18n="modal.thPriceOut">输出价</th><th data-i18n="modal.thKey">密钥引用</th><th></th>
           </tr>
         </thead>
         <tbody id="modelsRows"></tbody>
       </table>
       <div class="domain-actions">
-        <button type="button" onclick="addModelRow()">＋ 添加档位</button>
-        <span class="hint">档位名（router/standard/reasoning…）是全局契约：Agent 的 tier / 任务下拉都按它工作</span>
+        <button type="button" onclick="addModelRow()" data-i18n="modal.add">＋ 添加档位</button>
+        <span class="hint" data-i18n="modal.tierHint">档位名（router/standard/reasoning…）是全局契约：Agent 的 tier / 任务下拉都按它工作</span>
       </div>
       <hr>
-      <h4>运行参数</h4>
+      <h4 data-i18n="modal.runParams">运行参数</h4>
       <div class="run-params">
-        <label>LLM 超时（秒）<input id="rp_timeout" type="number" min="10" max="600"></label>
-        <label>重试次数<input id="rp_retries" type="number" min="0" max="5"></label>
-        <label>详细日志<input id="rp_detail" type="checkbox"></label>
-        <label>默认输入价（元/百万）<input id="rp_price_in" type="number" step="0.1" min="0"></label>
-        <label>默认输出价（元/百万）<input id="rp_price_out" type="number" step="0.1" min="0"></label>
+        <label data-i18n="modal.timeout">LLM 超时（秒）<input id="rp_timeout" type="number" min="10" max="600"></label>
+        <label data-i18n="modal.retries">重试次数<input id="rp_retries" type="number" min="0" max="5"></label>
+        <label data-i18n="modal.detail">详细日志<input id="rp_detail" type="checkbox"></label>
+        <label data-i18n="modal.priceIn">默认输入价（元/百万）<input id="rp_price_in" type="number" step="0.1" min="0"></label>
+        <label data-i18n="modal.priceOut">默认输出价（元/百万）<input id="rp_price_out" type="number" step="0.1" min="0"></label>
       </div>
       <div id="modelsSaveMsg" class="meta"></div>
     </div>
     <div class="modal-foot">
-      <button type="button" onclick="closeModelsModal()">取消</button>
-      <button type="button" class="primary" onclick="saveModelsConfig()">💾 保存配置</button>
+      <button type="button" onclick="closeModelsModal()" data-i18n="modal.cancel">取消</button>
+      <button type="button" class="primary" onclick="saveModelsConfig()" data-i18n="modal.save">💾 保存配置</button>
     </div>
   </div>
 </div>
 
 <!-- 结果区 -->
 <div id="result" class="card result" style="display:none">
-  <h3>最终研究结果</h3>
+  <h3 data-i18n="result.title">最终研究结果</h3>
   <pre id="resultBody"></pre>
   <div id="resultMeta" class="meta"></div>
 </div>
 
+<script src="/static/i18n.js"></script>
 <script src="/static/app.js"></script>
 </body>
 </html>
