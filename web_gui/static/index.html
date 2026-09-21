@@ -124,11 +124,10 @@
       <h3 data-i18n="main.logTitle">执行日志</h3>
       <div id="logBox" class="log-box"></div>
     </div>
+    <!-- 人工交互区：放在主内容区下面（日志后），不飘到页面底部 -->
+    <div id="interact" class="interact" style="display:none"></div>
   </main>
 </div>
-
-<!-- 人工交互区 -->
-<div id="interact" class="interact" style="display:none"></div>
 
 <!-- 模型配置编辑面板（轻量：只编辑非密钥字段；密钥去 .env 改） -->
 <div id="modelsModal" class="modal-mask" style="display:none">

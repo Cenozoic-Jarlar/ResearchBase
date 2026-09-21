@@ -335,6 +335,7 @@ function showTask(taskId) {
   nodeStatus = {};
   $("result").style.display = "none";
   $("interact").style.display = "none";
+  _lastInteractKey = null;
   $("logBox").innerHTML = "";
   $("graphBox").innerHTML = '<div class="placeholder">' + t("graph.generating") + '</div>';
   $("btnStart").disabled = true;
@@ -648,35 +649,47 @@ function renderGraph(graph, task) {
 function shorten(s, n) { return s.length > n ? s.slice(0, n) + "…" : s; }
 
 /* ---------- 交互区 ---------- */
+// 状态记忆：同状态不重建 innerHTML（否则轮询会把正在打字的 textarea 重建，焦点丢失+内容清空）
+let _lastInteractKey = null;
+
 function renderInteract(task) {
   const box = $("interact");
   if (task.status === "waiting_feedback") {
-    box.style.display = "block";
     const planHtml = (task.plan || []).map((s, i) =>
       `<div class="plan-list"><b>步骤${i + 1}</b>｜${agentLabel(s.agent)}｜${escapeHtml(s.note || "")}</div>`).join("");
-    box.innerHTML = `
-      <h3>✏️ 人工审阅任务计划（动态规划-人审模式）</h3>
-      <div>当前计划：</div>${planHtml}
-      <label>修改意见（提交后返回 LLM 重新生成计划）</label>
-      <textarea id="feedbackText" placeholder="例如：增加批判性审阅环节，先调研再写作，压缩为3个步骤"></textarea>
-      <div class="actions">
-        <button class="primary" id="btnFeedback">🔄 重新生成计划</button>
-        <button id="btnExecPlan">▶ 按当前计划执行</button>
-      </div>`;
-    $("btnFeedback").addEventListener("click", () => sendFeedback("plan_feedback"));
-    $("btnExecPlan").addEventListener("click", () => sendFeedback("start"));
-  } else if (task.status === "waiting_input") {
+    const key = "feedback|" + (task.plan || []).map(s => s.agent + s.note).join("|");
     box.style.display = "block";
+    if (key !== _lastInteractKey) {
+      box.innerHTML = `
+        <h3>✏️ 人工审阅任务计划（动态规划-人审模式）</h3>
+        <div>当前计划：</div>${planHtml}
+        <label>修改意见（提交后返回 LLM 重新生成计划）</label>
+        <textarea id="feedbackText" placeholder="例如：增加批判性审阅环节，先调研再写作，压缩为3个步骤"></textarea>
+        <div class="actions">
+          <button class="primary" id="btnFeedback">🔄 重新生成计划</button>
+          <button id="btnExecPlan">▶ 按当前计划执行</button>
+        </div>`;
+      $("btnFeedback").addEventListener("click", () => sendFeedback("plan_feedback"));
+      $("btnExecPlan").addEventListener("click", () => sendFeedback("start"));
+      _lastInteractKey = key;
+    }
+  } else if (task.status === "waiting_input") {
     const waitEv = [...task.events].reverse().find(e => e.type === "waiting");
     const hint = waitEv ? waitEv.content : "流程暂停，等待人工输入";
-    box.innerHTML = `
-      <h3>⏸ 流程暂停：等待人工输入</h3>
-      <p style="font-size:13px;color:#6b7280">${escapeHtml(hint)}</p>
-      <textarea id="resumeText" placeholder="补充信息或修改意见（无补充输入【无】）"></textarea>
-      <div class="actions"><button class="primary" id="btnResume">▶ 提交并继续</button></div>`;
-    $("btnResume").addEventListener("click", () => sendFeedback("resume"));
+    const key = "input|" + hint;
+    box.style.display = "block";
+    if (key !== _lastInteractKey) {
+      box.innerHTML = `
+        <h3>⏸ 流程暂停：等待人工输入</h3>
+        <p style="font-size:13px;color:#6b7280">${escapeHtml(hint)}</p>
+        <textarea id="resumeText" placeholder="补充信息或修改意见（无补充输入【无】）"></textarea>
+        <div class="actions"><button class="primary" id="btnResume">▶ 提交并继续</button></div>`;
+      $("btnResume").addEventListener("click", () => sendFeedback("resume"));
+      _lastInteractKey = key;
+    }
   } else {
     box.style.display = "none";
+    _lastInteractKey = null;  // 下次重新进入时重建
   }
 }
 
@@ -694,6 +707,7 @@ async function sendFeedback(action) {
   renderedEventCount = 0;
   $("logBox").innerHTML = "";
   $("interact").style.display = "none";
+  _lastInteractKey = null;
   poll();
 }
 
