@@ -23,7 +23,7 @@ def test_registry():
     print("【测试：价值观框架自动注册】")
     print("=" * 60)
     names = {p["name"] for p in memory_registry.get_profile_list()}
-    assert {"general", "policy", "technology", "humanities", "personal_style_demo"} <= names, names
+    assert {"general", "policy", "technology", "humanities", "cute_style"} <= names, names
     print(f"✅ 已注册框架: {sorted(names)}\n")
 
 
@@ -42,11 +42,11 @@ def test_select_profiles():
     p = select_profiles("随便一个不相关主题xyz")
     assert p and p[0]["name"] == "general", "无命中应兜底 general"
     # 显式指定优先（风格框架只能显式加载）
-    p = select_profiles("小升初政策", explicit=["personal_style_demo"])
-    assert p and p[0]["name"] == "personal_style_demo", "显式指定应优先于自动匹配"
+    p = select_profiles("小升初政策", explicit=["cute_style"])
+    assert p and p[0]["name"] == "cute_style", "显式指定应优先于自动匹配"
     # 叠加：主题 + 风格 多框架同用
-    p = select_profiles("小升初政策", explicit=["policy", "personal_style_demo"])
-    assert {x["name"] for x in p} == {"policy", "personal_style_demo"}, "应支持多框架叠加"
+    p = select_profiles("小升初政策", explicit=["policy", "cute_style"])
+    assert {x["name"] for x in p} == {"policy", "cute_style"}, "应支持多框架叠加"
     # 空框架不参与自动匹配
     p = select_profiles("小升初政策")
     assert all(x.get("values") for x in p), "自动匹配不应选中空框架"
@@ -76,10 +76,10 @@ def test_memory_advisor_run():
     print("【测试：记忆顾问 Agent 集成】")
     print("=" * 60)
     from agent_registry.agents.memory_advisor_agent import run as advisor_run
-    result = advisor_run({"topic": "大模型技术趋势", "profiles": ["personal_style_demo"]})
+    result = advisor_run({"topic": "大模型技术趋势", "profiles": ["cute_style"]})
     assert "value_profiles" in result
     names = {p["name"] for p in result["value_profiles"]}
-    assert "personal_style_demo" in names, "显式指定应生效"
+    assert "cute_style" in names, "显式指定应生效"
     assert "advisor_note" in result, "应返回说明"
     print(f"✅ 记忆顾问注入成功：{result['advisor_note']}\n")
 

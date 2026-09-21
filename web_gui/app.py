@@ -133,6 +133,28 @@ def import_materials_api():
     return jsonify({"ok": True, "task_id": task.id, "count": len(valid)})
 
 
+@app.route("/api/topics", methods=["POST"])
+def create_topic():
+    """新建空话题库（不挂来源，只建目录+_repo.md）。
+    body: {topic: 话题名, domain: 空=公共知识库/通用层, 具体域=专用域}"""
+    data = request.get_json(silent=True) or {}
+    topic = (data.get("topic") or "").strip()
+    domain = (data.get("domain") or "").strip().lower() or None
+    if not topic:
+        return jsonify({"ok": False, "error": "话题名不能为空"}), 400
+    try:
+        from core.paths import local_db_root
+        from skills.write_local_database import _ensure_topic_dir, _init_repo_meta
+        root = local_db_root(domain)
+        os.makedirs(root, exist_ok=True)
+        repo_dir = _ensure_topic_dir(topic, root)
+        _init_repo_meta(repo_dir, os.path.basename(repo_dir))
+        return jsonify({"ok": True, "topic_dir": os.path.basename(repo_dir),
+                        "message": f"话题库已建：{os.path.basename(repo_dir)}"})
+    except Exception as e:
+        return jsonify({"ok": False, "error": f"建库失败：{e}"}), 500
+
+
 @app.route("/api/task", methods=["POST"])
 def create_task():
     data = request.get_json(silent=True) or {}

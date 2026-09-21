@@ -54,8 +54,8 @@
       <label id="flowLabel" style="display:none" data-i18n="research.flow">静态流程</label>
       <select id="flowSelect" style="display:none"></select>
 
-      <label data-i18n="research.profiles">价值观框架（可多选，留空=自动匹配）</label>
-      <select id="profileSelect" multiple size="3"></select>
+      <label data-i18n="research.profiles">价值观框架（勾选自动匹配=不干预；勾具体框架=指定风格）</label>
+      <div id="profileChecklist" class="checkbox-list"></div>
 
       <label data-i18n="research.tier">模型档位（留空=自动：按 Agent 声明档位，未声明者按难度映射）</label>
       <select id="modelTierSelect"></select>
@@ -78,6 +78,10 @@
 
     <!-- 资料入库表单 -->
     <div class="panel tab-pane" id="pane-import">
+      <div class="domain-actions" style="margin-bottom:10px">
+        <button id="btnNewTopic" type="button" data-i18n="import.newTopic">＋ 新建话题库</button>
+        <span class="hint" data-i18n="import.newTopicHint">建空话题目录，以后再往里加资料</span>
+      </div>
       <label data-i18n="import.topic">目标话题（入库去向：AI 提炼 / 选现有话题 / 输入新话题）</label>
       <select id="importTopicSelect">
         <option value="">🤖 AI 自动提炼（默认，自动匹配现有话题防碎片化）</option>

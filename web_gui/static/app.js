@@ -105,14 +105,40 @@ function fillFlowSelect() {
 }
 
 function fillProfileSelect() {
-  const sel = $("profileSelect");
-  sel.innerHTML = (info.profiles || []).map(p =>
-    `<option value="${p.name}">${p.name}${p.has_values ? "" : "（空占位）"}${p.dimension === "style" ? "·风格" : "·主题"}</option>`
+  const box = $("profileChecklist");
+  const profiles = info.profiles || [];
+  // 第一个固定项：自动匹配（默认勾选；勾选时忽略其他选择）
+  let html = `<label class="checkbox-item">
+    <input type="checkbox" id="profileAuto" checked>
+    <span>🤖 自动匹配（默认，按主题关键词选最合适的框架）</span>
+  </label>`;
+  html += profiles.map(p =>
+    `<label class="checkbox-item">
+      <input type="checkbox" class="profile-opt" value="${p.name}">
+      <span>${p.name}${p.has_values ? "" : "（空占位）"}${p.dimension === "style" ? "·风格" : "·主题"} — ${escapeHtml(p.desc || "")}</span>
+    </label>`
   ).join("");
+  box.innerHTML = html;
+  // 勾"自动匹配"时取消其他；勾具体框架时取消"自动匹配"
+  $("profileAuto").addEventListener("change", function() {
+    if (this.checked) {
+      box.querySelectorAll(".profile-opt").forEach(c => c.checked = false);
+    }
+  });
+  box.querySelectorAll(".profile-opt").forEach(cb => {
+    cb.addEventListener("change", function() {
+      if (this.checked) $("profileAuto").checked = false;
+      // 如果全取消，自动勾回"自动匹配"
+      const anyChecked = Array.from(box.querySelectorAll(".profile-opt")).some(c => c.checked);
+      if (!anyChecked) $("profileAuto").checked = true;
+    });
+  });
 }
 
 function selectedProfiles() {
-  return Array.from($("profileSelect").selectedOptions).map(o => o.value);
+  // 勾"自动匹配"=返回空数组（后端自动匹配）；否则返回勾选的具体框架名
+  if ($("profileAuto").checked) return [];
+  return Array.from(document.querySelectorAll(".profile-opt:checked")).map(c => c.value);
 }
 
 function fillModelTierSelect() {
@@ -443,6 +469,30 @@ function bindImportActions() {
   });
   const btnImport = $("btnImport");
   if (btnImport) btnImport.addEventListener("click", importMaterials);
+  const btnNewTopic = $("btnNewTopic");
+  if (btnNewTopic) btnNewTopic.addEventListener("click", createTopic);
+}
+
+async function createTopic() {
+  const name = prompt("输入新话题名（中英文均可，如：宋代山水画美学）：");
+  if (!name || !name.trim()) return;
+  const domain = selectedDomain();  // 空=公共知识库
+  try {
+    const res = await fetch("/api/topics", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ topic: name.trim(), domain }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      alert("✅ " + data.message);
+      loadInfo();  // 刷新主题库徽章和话题下拉
+    } else {
+      alert("❌ " + (data.error || "失败"));
+    }
+  } catch (e) {
+    alert("❌ 请求失败：" + e);
+  }
 }
 
 async function importMaterials() {
