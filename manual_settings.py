@@ -5,13 +5,14 @@
            改模型、加提供商、调价格、修格式错误都直接改这里，改完重启生效）；
            .env=纯密钥（不进 git，机器级）；core/paths.py=代码规范常量（不动）；
            运行时读取规则=环境变量优先（os.getenv 第一参数），本文件值只作默认/兜底
-[关键约定] ★ 唯一不可破边界=**密钥只放 .env**：本文件 api_key 一律写
-             os.getenv("LLM_xxx", "占位符") 形式（声明「从哪个环境变量取 + 默认占位符」），
-             禁止在文件里写真实密钥（防止入 git 泄漏）；模型档位名（MODELS 的 key）是全局契约：
-             AGENT_META.tier / GUI 下拉 / resolve_tier 都按它工作，新增档位=加一个 key（GUI 自动出现）
+[关键约定] ★ 唯一不可破边界=**密钥只放 .env**：本文件 api_key 一律用
+             resolve_key("LLM_<档位大写>_API_KEY") 读取——代码里不写任何 key/占位符，
+             旁边注释写明"key 在 .env：XXX=sk-..."。未配置的档位在真正调用时
+             llm_config._build_llm 会报人话错误（提示去 .env 加变量），不影响其他档位。
+           模型档位名（MODELS 的 key）是全局契约：AGENT_META.tier / GUI 下拉 / resolve_tier 都按它工作
 [被谁调用] llm_config.py（模型注册表+超时/重试/价格）、core/logger.py（详细日志开关）
 [修改注意] 改动模型档位名需同步 AGENTS.md §6 与 Agent 的 tier 声明；
-           AI 自动维护时：可改模型/价格/新增档位/修复格式，但密钥只允许引用 .env，不得写入本文件
+           AI 自动维护时：可改模型/价格/新增档位/修复格式，但密钥只允许 resolve_key 引用 .env，不得写入本文件
 """
 import os
 from dotenv import load_dotenv
@@ -19,13 +20,31 @@ from dotenv import load_dotenv
 # 先加载 .env（幂等）：让下方 os.getenv 能读到密钥；重复 import 安全
 load_dotenv()
 
+
+def resolve_key(env_var_name: str) -> str:
+    """从 .env / 环境变量读 API key；未配置返回空字符串。
+
+    ★ 设计原则：本函数不写任何默认值/占位符——避免在代码里出现"像 key 又不是 key"
+    的中文字符串（如 sk-请填入...）误导人。真正调用档位时 llm_config._build_llm
+    会校验空值并报人话错误（"未配置真实密钥，请在 .env 设置 XXX=sk-..."）。
+
+    用法：
+        "api_key": resolve_key("LLM_API_KEY")            # 全局 key
+        "api_key": resolve_key("LLM_REASONING_API_KEY")  # 档位专属 key
+    对应的 .env 行：
+        LLM_API_KEY=sk-...
+        LLM_REASONING_API_KEY=sk-...
+    """
+    return (os.getenv(env_var_name, "") or "").strip()
+
+
 # =====================================================================
 # 一、模型注册表（档位 → 模型）
 # ---------------------------------------------------------------------
 # 字段说明：
 #   model           API 模型名（也是费用分桶键，改模型=改这一行）
 #   base_url        API 地址；非秘密可写死，也可 os.getenv 引用（.env 覆盖）
-#   api_key         ★ 一律 os.getenv("LLM_<档位大写>_API_KEY", "占位符")
+#   api_key         ★ 一律 resolve_key("LLM_<档位大写>_API_KEY")
 #                   ——真实密钥放 .env（LLM_API_KEY=全局兜底；档位专属=LLM_<档位>_API_KEY）
 #   role            用途说明（GUI 档位下拉展示）
 #   capabilities    模型能力标签（text/vision/long_context；搜索/读库是 Skill 能力，不写这里）
@@ -37,7 +56,7 @@ MODELS = {
     "router": {
         "model": "deepseek-ai/DeepSeek-V4-Flash",
         "base_url": os.getenv("LLM_BASE_URL", "https://api.siliconflow.cn/v1"),
-        "api_key": os.getenv("LLM_API_KEY", "sk-请填入你的硅基流动APIKey"),
+        "api_key": resolve_key("LLM_API_KEY"),  # ★ key 在 .env：LLM_API_KEY=sk-...
         "role": "路由判断/简单问答，便宜快",
         "capabilities": ["text"],
         "input_price": 2,
@@ -47,7 +66,7 @@ MODELS = {
     "standard": {
         "model": "deepseek-ai/DeepSeek-V4-Pro",
         "base_url": os.getenv("LLM_BASE_URL", "https://api.siliconflow.cn/v1"),
-        "api_key": os.getenv("LLM_API_KEY", "sk-请填入你的硅基流动APIKey"),
+        "api_key": resolve_key("LLM_API_KEY"),  # ★ key 在 .env：LLM_API_KEY=sk-...
         "role": "日常调研/写作/审阅主模型",
         "capabilities": ["text", "long_context"],
         "input_price": 9,
@@ -58,17 +77,17 @@ MODELS = {
     "reasoning": {
         "model": "deepseek-reasoner",
         "base_url": os.getenv("LLM_REASONING_BASE_URL", "https://api.deepseek.com/v1"),
-        "api_key": os.getenv("LLM_REASONING_API_KEY", "sk-请填入你的DeepSeek官方APIKey"),
+        "api_key": resolve_key("LLM_REASONING_API_KEY"),  # ★ key 在 .env：LLM_REASONING_API_KEY=sk-...
         "role": "复杂推理/深度分析（人工指定）",
         "capabilities": ["text", "long_context"],
         "input_price": 9,
         "output_price": 27,
     },
     # ── 其他提供商示例（取消注释即可启用；key 放 .env 对应变量）──
-    # "standard": {
+    # "openai_mini": {
     #     "model": "gpt-4o-mini",
     #     "base_url": os.getenv("LLM_OPENAI_BASE_URL", "https://api.openai.com/v1"),
-    #     "api_key": os.getenv("LLM_OPENAI_API_KEY", "sk-请填入你的OpenAIAPIKey"),
+    #     "api_key": resolve_key("LLM_OPENAI_API_KEY"),  # ★ key 在 .env：LLM_OPENAI_API_KEY=sk-...
     #     "role": "日常主模型（OpenAI）",
     #     "capabilities": ["text"],
     #     "input_price": 1.1,

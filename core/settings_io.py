@@ -52,8 +52,16 @@ def _exec_ns(path: str) -> dict:
 
 
 def _getenv_info(text: str, field: str) -> str:
-    """从源码片段提取某字段的 os.getenv 环境变量名；非 getenv 引用返回 None"""
+    """从源码片段提取某字段的 env 变量名；兼容两种写法：
+    - os.getenv("LLM_XXX", "默认值")  （旧格式）
+    - resolve_key("LLM_XXX")          （新格式，推荐：无占位符）
+    非 env 引用返回 None"""
     import re
+    # 先试新格式 resolve_key("XXX")
+    m = re.search(field + r'\s*"?\s*:\s*resolve_key\(\s*"([A-Za-z_][A-Za-z0-9_]*)"', text)
+    if m:
+        return m.group(1)
+    # 回退旧格式 os.getenv("XXX", "...")
     m = re.search(field + r'\s*"?\s*:\s*os\.getenv\(\s*"([A-Za-z_][A-Za-z0-9_]*)"', text)
     return m.group(1) if m else None
 
@@ -172,7 +180,7 @@ def _render_models(models: list, old_env: dict) -> str:
         lines.append(f'        "model": "{model}",')
         if base_url_expr:
             lines.append(f"        \"base_url\": {base_url_expr},")
-        lines.append(f'        "api_key": os.getenv("{ak_env}", "sk-请填入你的APIKey"),')
+        lines.append(f'        "api_key": resolve_key("{ak_env}"),  # ★ key 在 .env：{ak_env}=sk-...')
         lines.append(f'        "role": "{role}",')
         if caps:
             lines.append('        "capabilities": [' + ", ".join(f'"{c}"' for c in caps) + "],")

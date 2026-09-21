@@ -183,7 +183,7 @@ def test_manual_settings_registry_parse():
         assert reg["router"]["role"] == "路由判断" and reg["router"]["capabilities"] == ["text"], "role/capabilities 应解析"
         assert reg["router"]["input_price"] == 1.0 and reg["router"]["output_price"] == 4.0, "价格应解析"
         assert reg["standard"]["base_url"] == os.environ["LLM_BASE_URL"], "省略应继承全局 base_url"
-        assert reg["standard"]["api_key"] == os.environ["LLM_API_KEY"], "省略应继承全局 api_key"
+        assert reg["standard"]["api_key"] == "", "省略 api_key 应为空（不做全局 key 兜底；未配置档位在 _build_llm 时报错）"
         assert reg["standard"]["input_price"] == 2.0, "显式价格应保留"
         assert reg["reasoning"]["input_price"] is None, "省略价格应为 None"
         assert reg["reasoning"]["base_url"] == os.environ["LLM_BASE_URL"], "reasoning 省略应继承全局"

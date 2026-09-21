@@ -95,6 +95,10 @@ def _load_model_registry() -> dict:
         except Exception as e:
             detail_logger.error(f"LLM_MODELS 解析失败（回退 manual_settings）：{e}")
     # —— 2. 人工全局设置 manual_settings.MODELS（唯一运行时来源）——
+    # 注意：api_key 不做全局 LLM_API_KEY 兜底——各档位必须在 manual_settings 里用
+    # resolve_key("LLM_<档位>_API_KEY") 显式声明用哪个 key 环境变量；未配置的档位
+    # api_key 为空字符串，_build_llm 会报人话错误（"未配置真实密钥"），不静默错配跨提供商 key。
+    # base_url 可以全局兜底（同提供商多模型共用一个 endpoint）。
     reg = {}
     for name, cfg in manual_settings.MODELS.items():
         model = (cfg.get("model") or "").strip()
@@ -106,7 +110,7 @@ def _load_model_registry() -> dict:
             "role": cfg.get("role") or "",
             "capabilities": cfg.get("capabilities") or [],
             "base_url": cfg.get("base_url") or os.getenv("LLM_BASE_URL"),
-            "api_key": cfg.get("api_key") or os.getenv("LLM_API_KEY"),
+            "api_key": (cfg.get("api_key") or "").strip(),
             "input_price": _parse_price(cfg.get("input_price")),
             "output_price": _parse_price(cfg.get("output_price")),
         }
@@ -367,15 +371,19 @@ def _build_llm(name: str) -> LoggingLLM:
     api_key = (cfg.get("api_key") or "").strip()
     base_url = (cfg.get("base_url") or "").strip()
     # 防御：api_key 必须是 ASCII（Bearer token 走 HTTP header）。
-    # 若还是 manual_settings 里的中文占位符（如 "sk-请填入..."），httpx 会抛出晦涩的
-    # "'ascii' codec can't encode characters..."，用户完全看不懂。这里提前拦截，给出人话错误。
+    # 未配置（空字符串）或含中文占位符，都提前拦截给人话错误，不让 httpx 抛晦涩错误。
+    if not api_key:
+        raise RuntimeError(
+            f"模型档位 [{name}] 的 API key 未配置（.env 中缺少对应变量）。\n"
+            f"请在 .env 中设置 LLM_{name.upper()}_API_KEY=sk-你的真实key；"
+            f"或在 manual_settings.py 的 MODELS['{name}']['api_key'] 改为 resolve_key 指向已配置的环境变量。"
+        )
     try:
         api_key.encode("ascii")
     except (UnicodeEncodeError, UnicodeDecodeError):
         raise RuntimeError(
-            f"模型档位 [{name}] 的 API key 未配置真实密钥（当前是占位符）。\n"
-            f"请在 .env 中设置 LLM_{name.upper()}_API_KEY=sk-你的真实key；"
-            f"或在 manual_settings.py 的 MODELS['{name}']['api_key'] 改为引用已配置的环境变量。"
+            f"模型档位 [{name}] 的 API key 含非 ASCII 字符（疑似占位符或格式错误）。\n"
+            f"请在 .env 中设置 LLM_{name.upper()}_API_KEY=sk-你的真实key（注意不要留多余中文/空格）。"
         )
     # 防御：base_url 同样必须是 ASCII（URL 走网络层）
     try:
