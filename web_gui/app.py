@@ -11,6 +11,7 @@
 [修改注意] 新增动作需同时改 task_manager 对应方法与前端 app.js
 """
 from flask import Flask, jsonify, request, send_from_directory
+import os
 
 from agent_registry.registry import registry
 from skills.skill_registry import skill_registry

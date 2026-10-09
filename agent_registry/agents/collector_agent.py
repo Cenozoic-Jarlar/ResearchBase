@@ -9,7 +9,7 @@
               主题留空则同时自动提炼主题短语；用户/资料明确要求"独立/分开"→ 强制新建 —— router 档
            4) 合并决策：读目标库现有文件摘要，LLM 判断 合并到某文件 / 新建文件 —— router 档
            5) 写入：merge=备份原文件(_bak_前缀，读端自动忽略)后 原内容+新内容 LLM 清洗合并覆盖；
-               new=新建（文件名含主题与来源短标签）
+               new=新建（文件名优先用 LLM 提炼的资料标题，无标题回退 主题-来源短标签）
            降级安全：任何一步失败 → 保守走"新建"，绝不误覆盖原文件
 [关键约定] 写入字段 collect_result；入库主题 = 归一后的主题（用户填的或自动提炼）；
            支持多来源（逗号/换行分隔）；无来源时返回提示不报错；
@@ -133,7 +133,7 @@ def _organize(content: str, label: str, state: State, llm) -> str:
 {content[:RAW_LIMIT]}
 ---原始内容结束---
 {values_block}任务：整理为可直接入库的资料文本，严格按以下格式输出：
-标题：{sanitize_filename(label, 20)} 资料
+标题：（为这份资料提炼一个简洁有意义的标题，10~20字内概括核心内容，如"西红柿鸡蛋酸汤挂面做法"；禁止使用"直接文本""来源""资料"等无意义占位词）
 来源：{label}
 要点：
 （分条列出核心内容，去除广告、导航、无关噪声，保留事实与关键信息）
@@ -260,16 +260,36 @@ def _merge_write(topic: str, target_file: str, cleaned: str, domain, llm) -> str
 
 
 def _new_write(topic: str, cleaned: str, label: str, domain) -> str:
-    """新建文件：文件名=主题-来源短标签（自动编号，不同来源自然不同文件）"""
-    short = sanitize_filename(label, 16) or "资料"
-    fname = f"{sanitize_filename(topic, 24)}-{short}"
+    """新建文件：文件名优先用 LLM 提炼的资料标题（有意义的主题短语，如"西红柿鸡蛋酸汤挂面做法"），
+    无标题/标题无意义时回退 主题-来源短标签（不同来源自然不同文件）"""
+    title = _extract_title(cleaned)
+    if title:
+        base = f"{sanitize_filename(topic, 24)}-{title}"
+    else:
+        short = sanitize_filename(label, 16) or "资料"
+        base = f"{sanitize_filename(topic, 24)}-{short}"
     return skill_registry.get_run_func("write_local_database")(
-        filename=fname,
+        filename=base,
         content=cleaned,
         topic=topic or "00-默认资料",
         mode="overwrite",
         domain=domain,
     )
+
+
+def _extract_title(text: str) -> str:
+    """从整理后文本提取"标题：xxx"行作为文件名主体；无意义标题返回空（回退来源短标签）"""
+    m = re.search(r"^标题[:：]\s*(.+)$", text, re.M)
+    if not m:
+        return ""
+    title = m.group(1).strip()
+    title = re.sub(r"\s+", " ", title)
+    if not title or len(title) > 24:
+        return ""
+    # 无意义占位词过滤（LLM 可能没按规范命名）
+    if re.fullmatch(r"(直接文本|文本资料|资料|来源|无|none|n/a)", title, re.I):
+        return ""
+    return title
 
 
 def _resolve_repo_dir(topic: str, domain):
