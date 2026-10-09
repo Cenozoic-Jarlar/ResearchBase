@@ -112,7 +112,7 @@ def rename_domain_api(name):
 def import_materials_api():
     """资料入库（异步任务，进度展示在左侧任务流程区）：
     创建 mode=import 任务 → 后台线程逐条经 collector 整理入库。
-    body: {topic(目标话题：库名/新话题名，空=AI 自动提炼), domain(必选：空=公共知识库/通用层，
+    body: {topic(目标话题：库名/新话题名，空=AI 自动提炼), domain(必选：空=公共知识域/通用层，
            具体域=专用域), write_mode(auto|new|merge, 默认 auto), items: [{type, name, content}]}
     每个来源独立整理（避免单 prompt 爆 token）；单条失败隔离不阻断后续；
     返回 {ok, task_id, count}，前端轮询 /api/task/<task_id> 获取进度"""
@@ -147,7 +147,7 @@ def import_materials_api():
 @app.route("/api/topics", methods=["POST"])
 def create_topic():
     """新建空话题库（不挂来源，只建目录+_repo.md）。
-    body: {topic: 话题名, domain: 空=公共知识库/通用层, 具体域=专用域}"""
+    body: {topic: 话题名, domain: 空=公共知识域/通用层, 具体域=专用域}"""
     data = request.get_json(silent=True) or {}
     topic = (data.get("topic") or "").strip()
     domain = (data.get("domain") or "").strip().lower() or None

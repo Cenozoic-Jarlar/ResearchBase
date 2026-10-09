@@ -160,9 +160,9 @@ function fillDomainList() {
   const dl = $("domainList");
   if (!dl) return;
   dl.innerHTML = "";
-  // 第一项：公共知识库（跨域共享）= 通用层；value 用特殊标记，selectedDomain() 归一为空
+  // 第一项：公共知识域（跨域共享）= 通用层；value 用特殊标记，selectedDomain() 归一为空
   const opt0 = document.createElement("option");
-  opt0.value = "公共知识库（跨域共享）";
+  opt0.value = PUBLIC_KB_LABEL;
   dl.appendChild(opt0);
   (info.domains || []).forEach(d => {
     if (!d) return;  // 通用层由第一项表达
@@ -172,10 +172,10 @@ function fillDomainList() {
   });
 }
 
-const PUBLIC_KB_LABEL = "公共知识库（跨域共享）";
+const PUBLIC_KB_LABEL = "公共知识域（跨域共享）";
 
 function selectedDomain() {
-  // 归一：公共知识库（跨域共享）= 通用层（空）；其余原样返回（具体域）
+  // 归一：公共知识域（跨域共享）= 通用层（空）；其余原样返回（具体域）
   const v = ($("domainInput") ? $("domainInput").value : "").trim();
   return v === PUBLIC_KB_LABEL ? "" : v;
 }
@@ -183,7 +183,7 @@ function selectedDomain() {
 function restoreLastDomain() {
   const last = localStorage.getItem(DOMAIN_STORAGE_KEY);
   if (!last || last === PUBLIC_KB_LABEL) {
-    $("domainInput").value = PUBLIC_KB_LABEL;  // 首次/无记忆：默认公共知识库（跨域共享，显式可见）
+    $("domainInput").value = PUBLIC_KB_LABEL;  // 首次/无记忆：默认公共知识域（跨域共享，显式可见）
     return;
   }
   const known = new Set((info.domains || []).filter(Boolean));
@@ -202,13 +202,13 @@ function renderDomainStats() {
   const stats = info.domain_stats || {};
   const parts = [];
   const general = stats.general || {};
-  parts.push(`公共知识库(${general.topics || 0}库/${general.files || 0}文)`);
+  parts.push(`公共知识域(${general.topics || 0}库/${general.files || 0}文)`);
   (info.domains || []).forEach(d => {
     if (!d) return;
     const s = stats[d] || {};
     parts.push(`${d}(${s.topics || 0}库/${s.files || 0}文)`);
   });
-  el.textContent = "域概览：" + parts.join(" · ");
+  el.textContent = "各域内容量：" + parts.join(" · ");
 }
 
 async function apiDomain(action, payload) {
@@ -318,7 +318,7 @@ function fillTopicSelect() {
   optNew.value = "__new__";
   optNew.textContent = "✍️ 手动输入新话题…";
   sel.appendChild(optNew);
-  // 该域现有话题（info.topics 按 domain 精确匹配：具体域=仅域内，公共知识库=domain 空）
+  // 该域现有话题（info.topics 按 domain 精确匹配：具体域=仅域内，公共知识域=domain 空）
   const existing = (info.topics || []).filter(t => (domain ? t.domain === domain : !t.domain));
   [...new Set(existing.map(t => t.name))].sort().forEach(name => {
     const opt = document.createElement("option");
@@ -479,7 +479,7 @@ function bindImportActions() {
 async function createTopic() {
   const name = prompt("输入新主题名（中英文均可，自动按编号排列）：");
   if (!name || !name.trim()) return;
-  const domain = selectedDomain();  // 空=公共知识库
+  const domain = selectedDomain();  // 空=公共知识域（通用层）
   try {
     const res = await fetch("/api/topics", {
       method: "POST",
@@ -499,10 +499,10 @@ async function createTopic() {
 }
 
 async function importMaterials() {
-  // 域必选校验：公共知识库（跨域共享）或某专用域，二选一显式指定
+  // 域必选校验：公共知识域（跨域共享）或某专用域，二选一显式指定
   const domain = selectedDomain();
   const domainRaw = $("domainInput").value.trim();
-  if (!domainRaw) { alert("请先选择入库目标域：公共知识库（跨域共享）或某专用域（左侧顶部）"); return; }
+  if (!domainRaw) { alert(`请先选择入库目标域：${PUBLIC_KB_LABEL}或某专用域（左侧顶部）`); return; }
   // 话题组装：AI 自动提炼（空）/ 现有话题（库名）/ 手动新话题（输入框值）
   const topicMode = $("importTopicSelect").value;
   let topic = "";
@@ -525,7 +525,7 @@ async function importMaterials() {
 
   const btnImport = $("btnImport");
   btnImport.disabled = true;
-  const dest = domainRaw === PUBLIC_KB_LABEL ? "公共知识库（跨域共享）" : `域「${domainRaw}」`;
+  const dest = domainRaw === PUBLIC_KB_LABEL ? PUBLIC_KB_LABEL : `域「${domainRaw}」`;
   $("importResult").textContent = `已提交入库任务（写入 ${dest}），进度展示在左侧任务流程区...`;
   try {
     const res = await fetch("/api/import_materials", {

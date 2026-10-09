@@ -154,7 +154,7 @@ PROFILES="cute_style,policy" python main.py
 MODEL_TIER="reasoning" python main.py
 ```
 
-或用 Web GUI：选择域（或公共知识库/通用层）→ 输入主题 → 选择模式 → 实时观看流程图推进。GUI 还支持把资料（URL / 本地文件 / 粘贴文本）直接整理入库。
+或用 Web GUI：选择域（或公共知识域/通用层）→ 输入主题 → 选择模式 → 实时观看流程图推进。GUI 还支持把资料（URL / 本地文件 / 粘贴文本）直接整理入库。
 
 ---
 

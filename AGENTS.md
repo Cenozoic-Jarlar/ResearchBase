@@ -210,7 +210,7 @@ make_init_state 注入，Agent 经 llm_config.resolve_tier 决策取模型，见
 
 ### 4.5 资料仓库规范（本地知识库，规范常量在 `core/paths.py`）
 - **结构**：`LocalDataBase/<主题库>/`；主题库 = 含 `_repo.md` 的子目录（自动注册依据）；
-  **主题域**：通用层=根 `LocalDataBase/`（GUI 显示名「公共知识库（跨域共享）」，跨域共享资料），
+  **主题域**：通用层=根 `LocalDataBase/`（GUI 显示名「公共知识域（跨域共享）」，跨域共享资料），
   域私有=`domains/<域>/LocalDataBase/`（路径一律经
   `local_db_root(domain)` / `output_root(domain)` / `archive_root(domain)` 函数解析，禁止直接拼路径；
   domain=None/"general"=通用层）
@@ -274,7 +274,7 @@ created → planning → waiting_feedback(动态人审,可反复反馈重生成)
   **不触发** _archive_done（无文章/归档/记忆）；前端 renderResult 对 import 任务 done/failed
   更新资料入库容器提示 + 刷新主题库徽章
 - **GUI 布局（Tab 双表单）**：左侧边栏=主题域管理（公共，两 Tab 共用）+ Tab「研究任务/资料入库」切换；
-  域输入默认「公共知识库（跨域共享）」=通用层（`selectedDomain()` 归一为空，其余=具体域），
+  域输入默认「公共知识域（跨域共享）」=通用层（`selectedDomain()` 归一为空，其余=具体域），
   入库提交时域为空则前端拦截提示（必须显式选择去向）；资料入库表单=目标话题
   （`importTopicSelect`：AI 自动提炼(空)/现有话题(库名)/手动新话题(`__new__`+`importTopicNew`)，
   现有话题按所选域精确过滤 info.topics） + 写入方式 radio（auto/new/merge，默认 auto）

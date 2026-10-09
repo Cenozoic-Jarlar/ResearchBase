@@ -20,9 +20,9 @@
   <aside class="side">
     <div class="panel domain-panel">
       <h3 data-i18n="domain.title">主题域管理</h3>
-      <label data-i18n="domain.hint">写入/研究域（公共知识库 = 跨域共享资料，所有域可读）</label>
+      <label data-i18n="domain.hint">写入/研究域（公共知识域 = 跨域共享资料，所有域可读）</label>
       <div class="combobox">
-        <input id="domainInput" list="domainList" data-i18n-ph="domain.ph" placeholder="公共知识库（跨域共享）· 可选已有域或输入新域名" autocomplete="off" />
+        <input id="domainInput" list="domainList" data-i18n-ph="domain.ph" placeholder="公共知识域（跨域共享）· 可选已有域或输入新域名" autocomplete="off" />
         <button id="domainDropdownBtn" type="button" class="combobox-btn" title="展开全部域">▾</button>
         <div id="domainDropdown" class="combobox-dropdown" style="display:none"></div>
       </div>
@@ -81,10 +81,10 @@
     <div class="panel tab-pane" id="pane-import">
       <fieldset class="import-group">
         <legend data-i18n="import.groupDest">📂 资料去向（主题库与文件）</legend>
-        <p class="hint import-hint" data-i18n="import.destHint">主题库 = 当前域下的资料分类（只有一层，如「家常菜谱」「历史笔记」）。每条资料必须归属于一个主题库；一个主题库内可有多个文件（一个文件 = 一份资料）。写入位置由上方「域」决定：公共知识库 = 所有域共享；专用域 = 仅该域可见。</p>
-        <div class="domain-actions" style="margin-bottom:10px">
+        <p class="hint import-hint" data-i18n="import.destHint">主题库用于域内资料分类，一份资料对应一个文件，库内可有多个文件。</p>
+        <div style="margin:6px 0 2px">
           <button id="btnNewTopic" type="button" data-i18n="import.newTopic">＋ 新建主题库</button>
-          <span class="hint" data-i18n="import.newTopicHint">先建一个空的资料分类目录，以后再往里加资料</span>
+          <p class="hint" data-i18n="import.newTopicHint">手工建立空的资料分类。</p>
         </div>
         <label data-i18n="import.topic">目标主题库（入库去向：AI 提炼 / 选现有主题库 / 输入新主题）</label>
         <select id="importTopicSelect">
