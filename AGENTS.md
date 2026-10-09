@@ -328,8 +328,8 @@ created → planning → waiting_feedback(动态人审,可反复反馈重生成)
 - **详细日志** `logs/detail_run_*.log`：+ 与各模型的交互（输入 prompt 全文 / 输出全文）
 - **详细日志全局开关**：`manual_settings.DETAIL_LOG_ENABLED=false` 可关闭（完全静默，不落盘不打印），默认 `true`；`.env` 的 `DETAIL_LOG_ENABLED` 可临时覆盖；简单日志不受影响
 - 实现：`core/logger.py`（`get_logger` / `get_detail_logger`，后者按开关决定是否挂文件 handler）+ `llm_config.LoggingLLM` 包装（所有 `llm_*.invoke()` 自动记录，零侵入）
-- **LLM 超时与重试**：`manual_settings.LLM_TIMEOUT`（秒，默认90）/ `LLM_MAX_RETRIES`（默认1），`.env` 可覆盖；GUI 任务表单可填「LLM超时(秒)」
-  任务级覆盖 → task_manager.start 调 `llm_config.configure_llms`（**运行时重建 client**，LLM 无状态零副作用）；
+- **LLM 超时与重试**：`manual_settings.LLM_TIMEOUT`（秒，默认120）/ `LLM_MAX_RETRIES`（默认1），`.env` 可覆盖；
+  **研究任务与资料入库统一走此全局默认**（GUI 表单不提供任务级超时输入，任务级覆盖仅保留 API/CLI 兼容层）；
   超时/异常由 LoggingLLM 记 error 并抛出，**不再无限等待**
 - **Agent 执行耗时**：dynamic_planner._execute 记录每步耗时（`Agent完成: x, 耗时 Ns`）；
   Agent 抛异常 → 记 error 堆栈并转 RuntimeError（含角色名与原因），main/task_manager 上层转 failed 状态推送前端
@@ -380,7 +380,7 @@ created → planning → waiting_feedback(动态人审,可反复反馈重生成)
     域内与通用层同名主题库**域内优先**；`.gitignore` 排除 `domains/*`（README 与 `_模板域` 例外入库）；
     域管理一律走 `core/domain_config.py`（禁止手写路径拼凑）；GUI 域控件=datalist（可选已有+输入新建），
     新建/重命名调 POST /api/domains，重命名/建域前必须过 is_reserved_domain_name 校验
-14. **LLM 超时**：修改超时走 `manual_settings.LLM_TIMEOUT`（默认）/ `.env` 覆盖 / GUI 任务表单，禁止在 Agent 内自行 new ChatOpenAI；
+14. **LLM 超时**：修改超时走 `manual_settings.LLM_TIMEOUT`（默认120）/ `.env` 覆盖 / GUI 模型配置面板运行参数，研究与资料入库统一用全局默认（GUI 无任务级超时输入），禁止在 Agent 内自行 new ChatOpenAI；
     Agent 异常统一转 RuntimeError（勿静默吞掉，否则卡住无反馈）
 14b. **Agent 必须声明档位**：新建 Agent 的 AGENT_META 必须带 `tier`（router/standard/reasoning，模板强制）；
     不声明=跟随任务难度映射（simple→router、complex→standard），仅调研/轻量角色适用并需注释说明；

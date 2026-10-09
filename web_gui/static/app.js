@@ -384,7 +384,6 @@ async function startTask() {
       profiles: selectedProfiles(),
       domain: selectedDomain(),
       model_tier: $("modelTierSelect").value || null,  // 模型档位（留空=按难度自动映射）
-      timeout: $("llmTimeout").value ? Number($("llmTimeout").value) : null,
       auto_archive: $("autoArchive").checked,  // 跑完自动归档要点到资料库
     }),
   });

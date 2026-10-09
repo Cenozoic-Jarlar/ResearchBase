@@ -48,7 +48,7 @@ def test_read_settings():
     assert by_name["router"]["api_key_env"] == "LLM_API_KEY", "router 应引用全局 LLM_API_KEY"
     assert by_name["reasoning"]["api_key_env"] == "LLM_REASONING_API_KEY", "reasoning 应引用专属 env"
     assert "api_key" not in by_name["router"], "读取结果严禁携带真实密钥值"
-    assert data["run_params"]["llm_timeout"] == 90, "超时默认 90"
+    assert data["run_params"]["llm_timeout"] == 120, "超时默认 120"
     assert data["run_params"]["detail_log_enabled"] is True, "详细日志默认开"
     print(f"✅ 读取 {len(data['models'])} 档：{names}")
     print(f"✅ env 引用：router→{by_name['router']['api_key_env']}、reasoning→{by_name['reasoning']['api_key_env']}（不含密钥值）")
