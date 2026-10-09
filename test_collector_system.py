@@ -385,6 +385,24 @@ def test_import_materials_api():
     assert resp2.status_code == 400
     print("✅ 空来源正确拒绝（400）")
 
+    # 超长内容 → 400 且不进 LLM（text/file 预检；上限来自 manual_settings.IMPORT_MAX_CHARS）
+    from agent_registry.agents.collector_agent import IMPORT_MAX_CHARS
+    long_text = "长" * (IMPORT_MAX_CHARS + 1)
+    resp5 = client.post("/api/import_materials", json={"items": [{"type": "text", "name": "超长.txt", "content": long_text}]})
+    assert resp5.status_code == 400, f"超长 text 应被 400 拒绝: {resp5.status_code}"
+    assert "超过" in (resp5.get_json().get("error") or ""), f"错误信息应说明超长: {resp5.get_json()}"
+    print(f"✅ 超长内容（>{IMPORT_MAX_CHARS} 字符）正确拒绝（400）且不进 LLM")
+
+    # 未超长（正好等于上限）→ 正常放行（走 collector）
+    exact = "x" * IMPORT_MAX_CHARS
+    with patch("agent_registry.agents.collector_agent.run", new=fake_collector_run):
+        resp6 = client.post("/api/import_materials", json={"items": [{"type": "text", "name": "边界.md", "content": exact}]})
+    data6 = resp6.get_json()
+    assert resp6.status_code == 200 and data6["ok"], data6
+    final6 = wait_done(data6["task_id"])
+    assert final6 and final6["status"] == "done", f"上限边界内容应正常入库: {final6}"
+    print("✅ 上限边界内容（=IMPORT_MAX_CHARS）正常放行")
+
     # 单条失败隔离：collector 抛异常 → 任务仍 done，且 error 事件存在（不整体 failed）
     def failing_run(state):
         raise RuntimeError("抓取失败")

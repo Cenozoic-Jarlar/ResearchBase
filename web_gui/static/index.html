@@ -79,43 +79,51 @@
 
     <!-- 资料入库表单 -->
     <div class="panel tab-pane" id="pane-import">
-      <div class="domain-actions" style="margin-bottom:10px">
-        <button id="btnNewTopic" type="button" data-i18n="import.newTopic">＋ 新建话题库</button>
-        <span class="hint" data-i18n="import.newTopicHint">建空话题目录，以后再往里加资料</span>
-      </div>
-      <label data-i18n="import.topic">目标话题（入库去向：AI 提炼 / 选现有话题 / 输入新话题）</label>
-      <select id="importTopicSelect">
-        <option value="">🤖 AI 自动提炼（默认，自动匹配现有话题防碎片化）</option>
-        <option value="__new__">✍️ 手动输入新话题…</option>
-      </select>
-      <input id="importTopicNew" data-i18n-ph="import.topicNewPh" placeholder="输入新话题名（如：宋代山水画美学）" style="display:none" />
+      <fieldset class="import-group">
+        <legend data-i18n="import.groupDest">📂 资料去向（主题库与文件）</legend>
+        <p class="hint import-hint" data-i18n="import.destHint">主题库 = 当前域下的资料分类（只有一层，如「家常菜谱」「历史笔记」）。每条资料必须归属于一个主题库；一个主题库内可有多个文件（一个文件 = 一份资料）。写入位置由上方「域」决定：公共知识库 = 所有域共享；专用域 = 仅该域可见。</p>
+        <div class="domain-actions" style="margin-bottom:10px">
+          <button id="btnNewTopic" type="button" data-i18n="import.newTopic">＋ 新建主题库</button>
+          <span class="hint" data-i18n="import.newTopicHint">先建一个空的资料分类目录，以后再往里加资料</span>
+        </div>
+        <label data-i18n="import.topic">目标主题库（入库去向：AI 提炼 / 选现有主题库 / 输入新主题）</label>
+        <select id="importTopicSelect">
+          <option value="">🤖 AI 自动提炼（默认，自动匹配现有主题库防碎片化）</option>
+          <option value="__new__">✍️ 手动输入新主题…</option>
+        </select>
+        <input id="importTopicNew" data-i18n-ph="import.topicNewPh" placeholder="输入新主题名（中英文均可）" style="display:none" />
 
-      <label data-i18n="import.writeMode">写入方式</label>
-      <div class="modes">
-        <label><input type="radio" name="writeMode" value="auto" checked> <span data-i18n="import.writeAuto">🤖 AI 自主决策</span></label>
-        <label><input type="radio" name="writeMode" value="new"> <span data-i18n="import.writeNew">📄 新建文件</span></label>
-        <label><input type="radio" name="writeMode" value="merge"> <span data-i18n="import.writeMerge">➕ 追加到现有文件</span></label>
-      </div>
+        <label data-i18n="import.writeMode">写入方式（决定资料在主题库内如何落盘）</label>
+        <div class="modes">
+          <label><input type="radio" name="writeMode" value="auto" checked> <span data-i18n="import.writeAuto">🤖 AI 自主决策（默认：内容相近则追加合并，独立则新建文件）</span></label>
+          <label><input type="radio" name="writeMode" value="new"> <span data-i18n="import.writeNew">📄 新建文件（每条资料独立成文件）</span></label>
+          <label><input type="radio" name="writeMode" value="merge"> <span data-i18n="import.writeMerge">➕ 追加到现有文件（尽量合并进已有文件）</span></label>
+        </div>
+      </fieldset>
 
-      <label data-i18n="import.urls">网络来源（URL，每行一个，可多个）</label>
-      <textarea id="importUrls" rows="2" data-i18n-ph="import.urlsPh" placeholder="https://...（每行一个 URL，自动抓取正文）"></textarea>
+      <fieldset class="import-group">
+        <legend data-i18n="import.groupSrc">📥 资料来源（支持多个来源，每个来源独立处理）</legend>
+        <label data-i18n="import.urls">网络来源（URL，每行一个，可多个）</label>
+        <textarea id="importUrls" rows="2" data-i18n-ph="import.urlsPh" placeholder="https://...（每行一个 URL，自动抓取正文）"></textarea>
 
-      <label data-i18n="import.files">本地文件 / 文件夹（支持多选，也可整文件夹）</label>
-      <div class="domain-actions">
-        <button id="btnPickFiles" type="button" data-i18n="import.pickFiles">📄 选择文件</button>
-        <button id="btnPickFolder" type="button" data-i18n="import.pickFolder">📁 选择文件夹</button>
-      </div>
-      <input type="file" id="importFiles" multiple style="display:none" />
-      <input type="file" id="importFolder" webkitdirectory multiple style="display:none" />
-      <div id="importFileList" class="hint"></div>
+        <label data-i18n="import.files">本地文件 / 文件夹（支持多选，也可整文件夹）</label>
+        <div class="domain-actions">
+          <button id="btnPickFiles" type="button" data-i18n="import.pickFiles">📄 选择文件</button>
+          <button id="btnPickFolder" type="button" data-i18n="import.pickFolder">📁 选择文件夹</button>
+        </div>
+        <input type="file" id="importFiles" multiple style="display:none" />
+        <input type="file" id="importFolder" webkitdirectory multiple style="display:none" />
+        <div id="importFileList" class="hint"></div>
 
-      <label data-i18n="import.paste">直接粘贴文本（可选）</label>
-      <textarea id="importText" rows="2" data-i18n-ph="import.pastePh" placeholder="或把要整理的文本直接粘贴到这里，随上面来源一并入库"></textarea>
+        <label data-i18n="import.paste">直接粘贴文本（可选）</label>
+        <textarea id="importText" rows="2" data-i18n-ph="import.pastePh" placeholder="或把要整理的文本直接粘贴到这里，随上面来源一并入库"></textarea>
 
-      <div class="actions">
-        <button id="btnImport" type="button" class="primary" data-i18n="import.submit">📥 整理入库</button>
-      </div>
-      <div id="importResult" class="meta"></div>
+        <p class="hint" data-i18n="import.lengthHint">单条文本 / 文件内容上限 12000 字符，超长会被拦截提示，请拆分后分别提交。</p>
+        <div class="actions">
+          <button id="btnImport" type="button" class="primary" data-i18n="import.submit">📥 整理入库</button>
+        </div>
+        <div id="importResult" class="meta"></div>
+      </fieldset>
     </div>
   </aside>
 

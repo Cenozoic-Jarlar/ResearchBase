@@ -419,7 +419,7 @@ $("btnCancel").addEventListener("click", cancelTask);
 
 /* ---------- 资料入库（多 URL / 多文件 / 文件夹 / 直接文本） ---------- */
 let importFiles = [];                 // {name, content, skipped?}
-const IMPORT_MAX_BYTES = 100000;      // 单文件超过 100KB 跳过（collector 整理上限约 8000 字符）
+const IMPORT_MAX_CHARS = 12000;       // 单条文本/文件超过 12000 字符跳过（后端同样校验，超长不进 LLM）
 const IMPORT_TEXT_EXTS = [".txt", ".md", ".text"];  // 仅支持文本格式（docx/pdf 等二进制读成乱码，直接拦截提示）
 
 function readFilesAsText(fileList) {
@@ -431,12 +431,15 @@ function readFilesAsText(fileList) {
       resolve({ name: f.name, skipped: `非文本格式（仅支持 ${IMPORT_TEXT_EXTS.join("/")}），请转成文本或直接粘贴内容` });
       return;
     }
-    if (f.size > IMPORT_MAX_BYTES) {
-      resolve({ name: f.name, skipped: `超 ${Math.round(IMPORT_MAX_BYTES / 1024)}KB 已跳过` });
-      return;
-    }
     const reader = new FileReader();
-    reader.onload = () => resolve({ name: f.name, content: String(reader.result || "") });
+    reader.onload = () => {
+      const content = String(reader.result || "");
+      if (content.length > IMPORT_MAX_CHARS) {
+        resolve({ name: f.name, skipped: `内容超长（${content.length} 字符 > 上限 ${IMPORT_MAX_CHARS}），已跳过，请拆分后再导入` });
+        return;
+      }
+      resolve({ name: f.name, content });
+    };
     reader.onerror = () => resolve({ name: f.name, skipped: "读取失败" });
     reader.readAsText(f);
   })));
@@ -474,7 +477,7 @@ function bindImportActions() {
 }
 
 async function createTopic() {
-  const name = prompt("输入新话题名（中英文均可，如：宋代山水画美学）：");
+  const name = prompt("输入新主题名（中英文均可，自动按编号排列）：");
   if (!name || !name.trim()) return;
   const domain = selectedDomain();  // 空=公共知识库
   try {
@@ -513,6 +516,7 @@ async function importMaterials() {
   const urls = $("importUrls").value.split("\n").map(s => s.trim()).filter(Boolean);
   const text = $("importText").value.trim();
   const files = importFiles.filter(f => !f.skipped && f.content);
+  if (text.length > IMPORT_MAX_CHARS) { alert(`粘贴文本超长（${text.length} 字符 > 上限 ${IMPORT_MAX_CHARS}），请拆分后再导入`); return; }
   if (!urls.length && !text && !files.length) { alert("请至少提供 URL / 文本 / 文件之一"); return; }
   const items = [];
   urls.forEach(u => items.push({ type: "url", name: u, content: u }));

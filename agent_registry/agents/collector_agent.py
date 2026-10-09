@@ -35,12 +35,17 @@ from llm_config import get_llm, resolve_tier
 from skills.skill_registry import skill_registry
 from tools.document_output import sanitize_filename
 from memory.memory_registry import format_values_for
+import manual_settings
 
 # 本角色消费的价值观维度
 VP_DIMS = ["evidence", "style"]
 
 # 原文件超过该字符数 → 强制新建不合并（防单文件膨胀、token 爆炸）
 MERGE_MAX_CHARS = 8000
+# 单条来源内容上限（字符）：超过直接跳过不进 LLM（防 token 浪费与静默截断）。
+# ★ 配置项在 manual_settings.IMPORT_MAX_CHARS（人工/AI 全局设置），此处仅引用；
+# 入库 API 对 text/file 预检，URL 在抓取后此处兜底校验
+IMPORT_MAX_CHARS = manual_settings.IMPORT_MAX_CHARS
 # 合并前备份文件名前缀（_ 开头，读端 list/read 自动忽略，不污染检索）
 BACKUP_PREFIX = "_bak_"
 # 喂给决策/归一调用的内容预览长度（省 token）
@@ -69,6 +74,9 @@ def run(state: State) -> dict:
     for item, label, content in _fetch_all(source):
         if content.startswith("【提示】"):
             lines.append(f"❌ [{label}] {content}")
+            continue
+        if len(content) > IMPORT_MAX_CHARS:
+            lines.append(f"❌ [{label}] 内容超长（{len(content)} 字符 > 上限 {IMPORT_MAX_CHARS}），未入库；请拆分后分别提交（长文分块功能规划中）")
             continue
         cleaned = _organize(content, label, state, llm)
         if not cleaned:

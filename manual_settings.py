@@ -104,3 +104,5 @@ DETAIL_LOG_ENABLED = True     # 详细日志开关（false=完全静默不落盘
 PRICE_INPUT_PER_M = 2.0       # 全局默认单价（元/百万 tokens）：未在 MODELS 标价的模型兜底用
 PRICE_OUTPUT_PER_M = 8.0
 LOG_RETENTION_DAYS = 30       # 日志自动清理：启动时删除 logs/ 下超过 N 天的 run_*.log / detail_run_*.log；设 0=不清理
+IMPORT_MAX_CHARS = 12000      # 资料入库单条内容上限（字符）：超过直接拦截提示（前端+后端双重校验），
+                              # 不做静默截断、不进 LLM；长文分块入库功能见 AGENTS.md §11（规划中）

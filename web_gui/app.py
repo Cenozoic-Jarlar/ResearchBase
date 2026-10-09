@@ -125,6 +125,16 @@ def import_materials_api():
     items = data.get("items") or []
     if not items:
         return jsonify({"ok": False, "error": "未提供任何资料来源（URL/文本/文件）"}), 400
+    # 入库前长度校验：超长内容不进 LLM（防 token 浪费与静默截断），只对内容已知的 text/file 生效；
+    # URL 内容在 collector 抓取后再校验（见 collector_agent.IMPORT_MAX_CHARS）
+    from agent_registry.agents.collector_agent import IMPORT_MAX_CHARS
+    too_long = [
+        it.get("name") or "来源"
+        for it in items
+        if it.get("type") in ("text", "file") and len(str(it.get("content") or "")) > IMPORT_MAX_CHARS
+    ]
+    if too_long:
+        return jsonify({"ok": False, "error": f"以下来源内容超过 {IMPORT_MAX_CHARS} 字符上限（暂不支持超长自动分块，请拆分后分别入库）：{', '.join(too_long[:5])}"}), 400
     valid = [it for it in items if str(it.get("content") or "").strip()]
     if not valid:
         return jsonify({"ok": False, "error": "来源内容均为空"}), 400
