@@ -30,6 +30,7 @@ main.py.正确能跑通的_备份
 *.bak
 _run_*.log
 _commit_msg.txt
+_bug*.png
 
 # ===== 项目外工具与个人文档（发布时从版本库移出，仅留本地） =====
 settings.json
